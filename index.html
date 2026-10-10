@@ -412,7 +412,7 @@ function kiesModus(niv) {
   if (niv.type === "analoog") {
     return willekeurig(["aanwijzen", "instellenAnaloog"]);
   }
-  return willekeurig(["aanwijzen", "instellenAnaloog", "instellenDigitaal"]);
+  return willekeurig(["aanwijzen", "instellenDigitaal"]);
 }
 
 function nieuweOpdracht() {
@@ -473,12 +473,14 @@ function nieuweOpdracht() {
     teken();
     knopKlaar.classList.remove("verborgen");
   } else {
-    opdrachtEl.textContent = "Stel de digitale klok in: hoe laat is het?";
+    opdrachtEl.textContent = "Stel deze tijd in op de digitale klok:";
+    const weergave = $("digitaal-weergave");
+    weergave.textContent = tijdTekst(huidigeTijd, niveau).replace(/ in de \w+$/, "");
     if (niveau.type === "digitaal24") {
-      hintEl.textContent = "Het is " + dagdeel(huidigeTijd.uur) + ".";
-      hintEl.classList.remove("verborgen");
+      weergave.textContent += " (" + dagdeel(huidigeTijd.uur) + ")";
     }
-    toonKlok(huidigeTijd.uur, huidigeTijd.minuut, false);
+    weergave.classList.remove("verborgen");
+    $("klok-wrap").classList.add("verborgen");
     const maxUur = niveau.type === "digitaal24" ? 23 : 12;
     const minUur = niveau.type === "digitaal24" ? 0 : 1;
     ingesteldeTijd = { uur: minUur, minuut: 0 };
