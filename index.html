@@ -107,11 +107,40 @@
   .sterren { font-size: clamp(2.2rem, 8vw, 3.2rem); letter-spacing: .3em; margin: .5rem 0 1rem; }
   .verborgen { display: none; }
 
+  .kolom-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    width: min(960px, 100%);
+  }
+  .kolom { text-align: left; }
+  .kolom-kop {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    border-bottom: 3px solid #d7e0ec;
+    padding-bottom: 0.75rem;
+  }
+  .kolom-kop h2 { font-size: clamp(1.2rem, 3.4vw, 1.5rem); color: var(--donker); }
+  .kop-klok { width: 54px; height: 54px; flex: none; }
+  .kop-digitaal {
+    width: 54px;
+    flex: none;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    border: 3px solid var(--donker);
+    border-radius: 0.4rem;
+    padding: 0.35rem 0;
+    font-variant-numeric: tabular-nums;
+  }
   .niveaus {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    grid-template-columns: 1fr;
     gap: 0.75rem;
   }
+  #niveau-label { text-align: center; }
   .niveau-kaart {
     background: #fff;
     border: 3px solid var(--blauw);
@@ -187,13 +216,28 @@
 <body>
 
 <h1>🕐 KlokMeester</h1>
-<p class="sub">Kies een niveau en begin met oefenen!</p>
 
-<div id="startpagina" class="card">
-  <div class="niveaus" id="niveaus"></div>
+<div id="startpagina">
+  <div class="kolom-wrapper">
+    <div class="kolom card">
+      <div class="kolom-kop">
+        <svg class="kop-klok" viewBox="-110 -110 220 220" aria-hidden="true"><circle r="100" fill="#fff" stroke="#1d3557" stroke-width="6"/><line x1="0" y1="0" x2="0" y2="-55" stroke="#1d3557" stroke-width="9" stroke-linecap="round"/><line x1="0" y1="0" x2="38" y2="31" stroke="#d9483b" stroke-width="6" stroke-linecap="round"/><circle r="7" fill="#1d3557"/><g font-size="18" font-weight="600" fill="#1d3557" text-anchor="middle"></g></svg>
+        <h2>Analoog</h2>
+      </div>
+      <div class="niveaus" id="niveaus-analoog"></div>
+    </div>
+    <div class="kolom card">
+      <div class="kolom-kop">
+        <div class="kop-digitaal">21:35</div>
+        <h2>Digitaal</h2>
+      </div>
+      <div class="niveaus" id="niveaus-digitaal"></div>
+    </div>
+  </div>
 </div>
 
 <div id="scherm-oefenen" class="card verborgen">
+  <p class="sub" id="niveau-label"></p>
   <div class="voortgang" id="voortgang"></div>
   <p class="opdracht" id="opdracht"></p>
   <p class="hint verborgen" id="hint"></p>
@@ -232,14 +276,15 @@ const DAGDELEN = [
 
 const NIVEAUS = [
   { nr: 1, naam: "Hele en halve uren", type: "analoog", minuten: [0, 30], stap: 30 },
-  { nr: 2, naam: "Kwartieren", type: "analoog", minuten: [0, 15, 30, 45], stap: 15 },
-  { nr: 3, naam: "5 minuten", type: "analoog", minuten: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55], stap: 5 },
-  { nr: 4, naam: "Alle tijden tot op de minuut", type: "analoog", minuten: null, stap: 1 },
-  { nr: 5, naam: "Digitaal: hele uren, halve uren en kwartieren", type: "digitaal12", minuten: [0, 15, 30, 45], stap: 15 },
-  { nr: 6, naam: "Digitaal: 5 minuten nauwkeurig", type: "digitaal12", minuten: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55], stap: 5 },
-  { nr: 7, naam: "Digitaal: alle tijden", type: "digitaal12", minuten: null, stap: 1 },
-  { nr: 8, naam: "Digitaal 24-uurs + dagdelen: hele/halve uren en kwartieren", type: "digitaal24", minuten: [0, 15, 30, 45], stap: 15 },
-  { nr: 9, naam: "Digitaal 24-uurs: alle tijden", type: "digitaal24", minuten: null, stap: 1 }
+  { nr: 2, naam: "Kwart voor en kwart over", type: "analoog", minuten: [0, 15, 30, 45], stap: 15 },
+  { nr: 3, naam: "5 en 10 minuten voor en over het hele uur", type: "analoog", minuten: [0, 5, 10, 50, 55], stap: 5 },
+  { nr: 4, naam: "5 en 10 minuten voor en over het halve uur", type: "analoog", minuten: [20, 25, 30, 35, 40], stap: 5 },
+  { nr: 5, naam: "Alle tijden, op de minuut nauwkeurig", type: "analoog", minuten: null, stap: 1 },
+  { nr: 6, naam: "Hele en halve uren", type: "digitaal24", minuten: [0, 30], stap: 30 },
+  { nr: 7, naam: "Kwart voor en kwart over", type: "digitaal24", minuten: [0, 15, 30, 45], stap: 15 },
+  { nr: 8, naam: "5 en 10 minuten voor en over het hele uur", type: "digitaal24", minuten: [0, 5, 10, 50, 55], stap: 5 },
+  { nr: 9, naam: "5 en 10 minuten voor en over het halve uur", type: "digitaal24", minuten: [20, 25, 30, 35, 40], stap: 5 },
+  { nr: 10, naam: "Alle tijden, op de minuut nauwkeurig", type: "digitaal24", minuten: null, stap: 1 }
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -666,8 +711,10 @@ function toonStartpagina() {
   $("scherm-resultaat").classList.add("verborgen");
   $("startpagina").classList.remove("verborgen");
   const voortgang = laadVoortgang();
-  const container = $("niveaus");
-  container.innerHTML = "";
+  const containerAnaloog = $("niveaus-analoog");
+  const containerDigitaal = $("niveaus-digitaal");
+  containerAnaloog.innerHTML = "";
+  containerDigitaal.innerHTML = "";
   NIVEAUS.forEach((niv) => {
     const behaald = voortgang[niv.nr];
     const kaart = document.createElement("button");
@@ -680,7 +727,7 @@ function toonStartpagina() {
       '<div class="naam">' + niv.naam + "</div>" +
       '<div class="kaart-sterren">' + sterrenTekst + "</div>";
     kaart.addEventListener("click", () => startSessie(niv));
-    container.appendChild(kaart);
+    (niv.type === "analoog" ? containerAnaloog : containerDigitaal).appendChild(kaart);
   });
 }
 
@@ -691,6 +738,9 @@ function startSessie(niv) {
   $("startpagina").classList.add("verborgen");
   $("scherm-resultaat").classList.add("verborgen");
   $("scherm-oefenen").classList.remove("verborgen");
+  $("niveau-label").textContent =
+    (niv.type === "analoog" ? "Analoog \u2013 " : "Digitaal \u2013 ") +
+    "niveau " + niv.nr + ": " + niv.naam;
   nieuweOpdracht();
 }
 
