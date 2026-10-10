@@ -93,6 +93,17 @@
   }
   .knop:active { transform: scale(.97); }
   .knop.groot { font-size: clamp(1.2rem, 3.5vw, 1.5rem); padding: 0.9rem 2.2rem; }
+  .knop.klaar {
+    margin-top: 0.4rem;
+  }
+  .knop-plaatsing {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 0.5rem;
+  }
+  .knop-plaatsing .knop { margin-top: 0; }
+  .knop-plaatsing .secuur { margin-left: auto; }
   .sterren { font-size: clamp(2.2rem, 8vw, 3.2rem); letter-spacing: .3em; margin: .5rem 0 1rem; }
   .verborgen { display: none; }
 
@@ -119,44 +130,57 @@
   .digitaal-instel {
     display: flex;
     justify-content: center;
-    align-items: center;
-    gap: 1.2rem;
-    margin-bottom: 1rem;
+    align-items: flex-start;
+    gap: 0;
+    margin-bottom: 0.75rem;
   }
-  .digitaal-instel .deel { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+  .digitaal-instel .deel { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
   .digitaal-instel .waarde {
     font-size: clamp(2rem, 8vw, 3rem);
     font-weight: 700;
-    min-width: 2.6em;
+    width: 2.1em;
+    height: 1.3em;
+    text-align: center;
+    border: 3px solid var(--blauw);
+    border-radius: 0.5rem;
+    background: #fff;
     font-variant-numeric: tabular-nums;
+    font-family: inherit;
+    padding: 0;
   }
   .digitaal-instel .stap {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 700;
-    width: 3rem;
-    height: 2.4rem;
+    width: 2.4rem;
+    height: 2rem;
     border: 3px solid var(--blauw);
     border-radius: 0.6rem;
     background: #fff;
     color: var(--blauw);
     cursor: pointer;
   }
-  .digitaal-instel .dubbelepunt { font-size: clamp(2rem, 8vw, 3rem); font-weight: 700; }
+  .digitaal-instel .dubbelepunt {
+    font-size: clamp(2rem, 8vw, 3rem);
+    font-weight: 700;
+    line-height: 1.3;
+    padding: 0 0.1rem;
+    align-self: flex-start;
+  }
   .hint { font-size: clamp(1rem, 2.8vw, 1.2rem); color: #556; margin-bottom: 0.75rem; }
   .digitaal-groot {
-    font-size: clamp(2.6rem, 10vw, 4rem);
+    font-size: clamp(1.6rem, 6vw, 2.2rem);
     font-weight: 700;
     margin-bottom: 1.25rem;
     font-variant-numeric: tabular-nums;
     letter-spacing: .05em;
   }
   .knop.secuur {
-    background: #fff;
-    color: var(--blauw);
-    border: 3px solid var(--blauw);
-    font-size: clamp(0.9rem, 2.4vw, 1.05rem);
-    padding: 0.5rem 1.2rem;
-    margin-top: 1.5rem;
+    background: none;
+    color: #7a8aa0;
+    border: none;
+    font-size: clamp(0.85rem, 2.2vw, 1rem);
+    padding: 0.4rem 0.8rem;
+    margin-top: 2.5rem;
   }
 </style>
 </head>
@@ -179,8 +203,10 @@
   </div>
   <div id="interactie"></div>
   <p class="feedback" id="feedback"></p>
-  <button class="knop verborgen" id="knop-klaar">Klaar!</button>
-  <button class="knop secuur" id="knop-hoofdmenu">◀ Hoofdmenu</button>
+  <div class="knop-plaatsing">
+    <button class="knop verborgen" id="knop-klaar">Klaar!</button>
+    <button class="knop secuur" id="knop-hoofdmenu">◀ Hoofdmenu</button>
+  </div>
 </div>
 
 <div id="scherm-resultaat" class="card verborgen">
@@ -486,23 +512,31 @@ function nieuweOpdracht() {
     ingesteldeTijd = { uur: minUur, minuut: 0 };
     const div = document.createElement("div");
     div.className = "digitaal-instel";
-    const maakDeel = (label, waardeF, plusF, minF) => {
+    const maakDeel = (label, waardeF, plusF, minF, zetHandmatig) => {
       const deel = document.createElement("div");
       deel.className = "deel";
       const omhoog = document.createElement("button");
       omhoog.className = "stap";
       omhoog.textContent = "+";
-      const waarde = document.createElement("div");
+      const waarde = document.createElement("input");
+      waarde.type = "text";
+      waarde.inputMode = "numeric";
       waarde.className = "waarde";
+      waarde.maxLength = 2;
       const omlaag = document.createElement("button");
       omlaag.className = "stap";
       omlaag.textContent = "–";
       const naam = document.createElement("div");
       naam.className = "hint";
       naam.textContent = label;
-      const ververs = () => { waarde.textContent = waardeF(); };
+      const ververs = () => { waarde.value = waardeF(); };
       omhoog.addEventListener("click", () => { plusF(); ververs(); });
       omlaag.addEventListener("click", () => { minF(); ververs(); });
+      waarde.addEventListener("input", () => {
+        const n = parseInt(waarde.value, 10);
+        if (!isNaN(n)) zetHandmatig(n);
+      });
+      waarde.addEventListener("blur", ververs);
       ververs();
       deel.appendChild(omhoog);
       deel.appendChild(waarde);
@@ -520,12 +554,18 @@ function nieuweOpdracht() {
       if (ingesteldeTijd.minuut > 59) ingesteldeTijd.minuut -= 60;
       if (ingesteldeTijd.minuut < 0) ingesteldeTijd.minuut += 60;
     };
-    div.appendChild(maakDeel("uur", () => String(ingesteldeTijd.uur).padStart(2, "0"), () => zetUur(1), () => zetUur(-1)));
+    const zetUurHandmatig = (n) => {
+      if (n >= minUur && n <= maxUur) ingesteldeTijd.uur = n;
+    };
+    const zetMinuutHandmatig = (n) => {
+      if (n >= 0 && n <= 59) ingesteldeTijd.minuut = n;
+    };
+    div.appendChild(maakDeel("uur", () => String(ingesteldeTijd.uur).padStart(2, "0"), () => zetUur(1), () => zetUur(-1), zetUurHandmatig));
     const dubbelePunt = document.createElement("div");
     dubbelePunt.className = "dubbelepunt";
     dubbelePunt.textContent = ":";
     div.appendChild(dubbelePunt);
-    div.appendChild(maakDeel("minuten", () => String(ingesteldeTijd.minuut).padStart(2, "0"), () => zetMinuut(1), () => zetMinuut(-1)));
+    div.appendChild(maakDeel("minuten", () => String(ingesteldeTijd.minuut).padStart(2, "0"), () => zetMinuut(1), () => zetMinuut(-1), zetMinuutHandmatig));
     interactieEl.appendChild(div);
     knopKlaar.classList.remove("verborgen");
   }
@@ -590,9 +630,14 @@ function beantwoordMeerkeuze(tekst, knop) {
   }, 1600);
 }
 
-knopKlaar.addEventListener("click", () => {
+const dienIn = () => {
   if (vergrendeld) return;
+  if (knopKlaar.classList.contains("verborgen")) return;
   verwerkAntwoord(juisteIngesteldeTijd(), goedAntwoordTekst());
+};
+knopKlaar.addEventListener("click", dienIn);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") dienIn();
 });
 
 function sterrenVoorScore(score, totaal) {
