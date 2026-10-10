@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KlokMeester – Oefen met klokkijken</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blauw: #2c6fbb;
+    --groen: #2e9e5b;
+    --rood: #d9483b;
+    --licht: #f4f7fb;
+    --donker: #1d3557;
+  }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--licht);
+    color: var(--donker);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+  }
+  h1 { font-size: clamp(1.4rem, 4vw, 2rem); margin-bottom: 0.25rem; }
+  .sub { color: #556; margin-bottom: 1.25rem; font-size: clamp(0.95rem, 2.5vw, 1.1rem); }
+  .card {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 4px 14px rgba(29,53,87,.12);
+    padding: clamp(1rem, 3vw, 2rem);
+    width: min(640px, 100%);
+    text-align: center;
+  }
+  .opdracht { font-size: clamp(1.15rem, 3.2vw, 1.5rem); font-weight: 600; margin-bottom: 1rem; }
+  .klok-wrap { display: flex; justify-content: center; margin-bottom: 1.25rem; }
+  svg.klok { width: min(320px, 78vw); height: auto; touch-action: manipulation; }
+  .opties {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+  .optie {
+    font-size: clamp(1.1rem, 3vw, 1.35rem);
+    font-weight: 600;
+    padding: 0.9rem 1rem;
+    border: 3px solid var(--blauw);
+    border-radius: 0.8rem;
+    background: #fff;
+    color: var(--blauw);
+    cursor: pointer;
+    transition: transform .08s, background .15s;
+  }
+  .optie:active { transform: scale(.97); }
+  .optie.goed { background: var(--groen); border-color: var(--groen); color: #fff; }
+  .optie.fout { background: var(--rood); border-color: var(--rood); color: #fff; }
+  .optie:disabled { cursor: default; opacity: .9; }
+  .feedback {
+    min-height: 2.4rem;
+    margin-top: 1rem;
+    font-size: clamp(1.05rem, 3vw, 1.3rem);
+    font-weight: 600;
+  }
+  .feedback.goed { color: var(--groen); }
+  .feedback.fout { color: var(--rood); }
+  .voortgang {
+    display: flex;
+    gap: .35rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  .voortgang span {
+    width: clamp(14px, 3vw, 20px);
+    height: clamp(14px, 3vw, 20px);
+    border-radius: 50%;
+    background: #d7e0ec;
+  }
+  .voortgang span.klaar { background: var(--blauw); }
+  .knop {
+    font-size: clamp(1.05rem, 3vw, 1.25rem);
+    font-weight: 600;
+    padding: 0.8rem 1.6rem;
+    border: none;
+    border-radius: 0.8rem;
+    background: var(--blauw);
+    color: #fff;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+  .knop:active { transform: scale(.97); }
+  .sterren { font-size: clamp(2.2rem, 8vw, 3.2rem); letter-spacing: .3em; margin: .5rem 0 1rem; }
+  .verborgen { display: none; }
+</style>
+</head>
+<body>
+
+<h1>🕐 KlokMeester</h1>
+<p class="sub">Niveau 1: hele en halve uren</p>
+
+<div id="scherm-oefenen" class="card">
+  <div class="voortgang" id="voortgang"></div>
+  <p class="opdracht">Hoe laat is het?</p>
+  <div class="klok-wrap">
+    <svg class="klok" id="klok" viewBox="-110 -110 220 220" aria-label="Analoge klok"></svg>
+  </div>
+  <div class="opties" id="opties"></div>
+  <p class="feedback" id="feedback"></p>
+</div>
+
+<div id="scherm-resultaat" class="card verborgen">
+  <h2 id="resultaat-titel"></h2>
+  <div class="sterren" id="sterren"></div>
+  <p id="resultaat-tekst"></p>
+  <button class="knop" id="knop-opnieuw">Nog een keer</button>
+</div>
+
+<script>
+"use strict";
+
+const AANTAL_OPDRACHTEN = 10;
+
+const klokEl = document.getElementById("klok");
+const optiesEl = document.getElementById("opties");
+const feedbackEl = document.getElementById("feedback");
+const voortgangEl = document.getElementById("voortgang");
+const schermOefenen = document.getElementById("scherm-oefenen");
+const schermResultaat = document.getElementById("scherm-resultaat");
+
+function tekenKlok(uur, minuut) {
+  const NS = "http://www.w3.org/2000/svg";
+  klokEl.innerHTML = "";
+
+  const cirkel = document.createElementNS(NS, "circle");
+  cirkel.setAttribute("r", 100);
+  cirkel.setAttribute("fill", "#fff");
+  cirkel.setAttribute("stroke", "#1d3557");
+  cirkel.setAttribute("stroke-width", 6);
+  klokEl.appendChild(cirkel);
+
+  for (let i = 0; i < 60; i++) {
+    const isUur = i % 5 === 0;
+    const streep = document.createElementNS(NS, "line");
+    const len = isUur ? 12 : 6;
+    const w = isUur ? 4 : 2;
+    const x1 = Math.sin(i * Math.PI / 30) * (100 - 4);
+    const y1 = -Math.cos(i * Math.PI / 30) * (100 - 4);
+    const x2 = Math.sin(i * Math.PI / 30) * (100 - 4 - len);
+    const y2 = -Math.cos(i * Math.PI / 30) * (100 - 4 - len);
+    streep.setAttribute("x1", x1); streep.setAttribute("y1", y1);
+    streep.setAttribute("x2", x2); streep.setAttribute("y2", y2);
+    streep.setAttribute("stroke", "#1d3557");
+    streep.setAttribute("stroke-width", w);
+    streep.setAttribute("stroke-linecap", "round");
+    klokEl.appendChild(streep);
+  }
+
+  for (let i = 1; i <= 12; i++) {
+    const tekst = document.createElementNS(NS, "text");
+    tekst.setAttribute("x", Math.sin(i * Math.PI / 6) * 76);
+    tekst.setAttribute("y", -Math.cos(i * Math.PI / 6) * 76 + 9);
+    tekst.setAttribute("text-anchor", "middle");
+    tekst.setAttribute("font-size", 22);
+    tekst.setAttribute("font-weight", 600);
+    tekst.setAttribute("fill", "#1d3557");
+    tekst.textContent = i;
+    klokEl.appendChild(tekst);
+  }
+
+  const minHoek = minuut * 6;
+  const uurMinuten = (minuut / 60) * 30;
+  const uurHoek = (uur % 12) * 30 + uurMinuten;
+
+  const uurWijzer = document.createElementNS(NS, "line");
+  uurWijzer.setAttribute("x1", 0); uurWijzer.setAttribute("y1", 10);
+  uurWijzer.setAttribute("x2", Math.sin(uurHoek * Math.PI / 180) * 50);
+  uurWijzer.setAttribute("y2", -Math.cos(uurHoek * Math.PI / 180) * 50);
+  uurWijzer.setAttribute("stroke", "#1d3557");
+  uurWijzer.setAttribute("stroke-width", 9);
+  uurWijzer.setAttribute("stroke-linecap", "round");
+  klokEl.appendChild(uurWijzer);
+
+  const minuutWijzer = document.createElementNS(NS, "line");
+  minuutWijzer.setAttribute("x1", 0); minuutWijzer.setAttribute("y1", 12);
+  minuutWijzer.setAttribute("x2", Math.sin(minHoek * Math.PI / 180) * 78);
+  minuutWijzer.setAttribute("y2", -Math.cos(minHoek * Math.PI / 180) * 78);
+  minuutWijzer.setAttribute("stroke", "#d9483b");
+  minuutWijzer.setAttribute("stroke-width", 6);
+  minuutWijzer.setAttribute("stroke-linecap", "round");
+  klokEl.appendChild(minuutWijzer);
+
+  const midden = document.createElementNS(NS, "circle");
+  midden.setAttribute("r", 7);
+  midden.setAttribute("fill", "#1d3557");
+  klokEl.appendChild(midden);
+}
+
+function willekeurigUur() { return 1 + Math.floor(Math.random() * 12); }
+
+function maakNiveau1Tijd() {
+  return { uur: willekeurigUur(), minuut: Math.random() < 0.5 ? 0 : 30 };
+}
+
+function tijdTekst(t) {
+  if (t.minuut === 0) {
+    return t.uur + " uur";
+  }
+  const volgendUur = (t.uur % 12) + 1;
+  return "half " + volgendUur;
+}
+
+function toetsOpties(juisteTijd) {
+  const juisteTekst = tijdTekst(juisteTijd);
+  const opties = new Set([juisteTekst]);
+  const juisteUur = juisteTijd.minuut === 0 ? juisteTijd.uur : ((juisteTijd.uur % 12) + 1);
+  while (opties.size < 3) {
+    const kandidaatUur = willekeurigUur();
+    const kandidaatMinuut = Math.random() < 0.5 ? 0 : 30;
+    const kandidaat = { uur: kandidaatUur, minuut: kandidaatMinuut };
+    const kandidaatTekst = tijdTekst(kandidaat);
+    if (kandidaatTekst !== juisteTekst) {
+      if (kandidaatMinuut === juisteTijd.minuut && kandidaatUur === juisteUur) continue;
+      opties.add(kandidaatTekst);
+    }
+  }
+  return Array.from(opties).sort(() => Math.random() - 0.5);
+}
+
+let huidigeTijd = null;
+let opdrachtNummer = 0;
+let score = 0;
+let vergrendeld = false;
+
+function toonVoortgang() {
+  voortgangEl.innerHTML = "";
+  for (let i = 0; i < AANTAL_OPDRACHTEN; i++) {
+    const stip = document.createElement("span");
+    if (i < opdrachtNummer) stip.classList.add("klaar");
+    voortgangEl.appendChild(stip);
+  }
+}
+
+function nieuweOpdracht() {
+  opdrachtNummer++;
+  vergrendeld = false;
+  feedbackEl.textContent = "";
+  feedbackEl.className = "feedback";
+  huidigeTijd = maakNiveau1Tijd();
+  tekenKlok(huidigeTijd.uur, huidigeTijd.minuut);
+  toonVoortgang();
+
+  const opties = toetsOpties(huidigeTijd);
+  optiesEl.innerHTML = "";
+  opties.forEach((tekst) => {
+    const knop = document.createElement("button");
+    knop.className = "optie";
+    knop.textContent = tekst;
+    knop.addEventListener("click", () => beantwoord(tekst, knop));
+    optiesEl.appendChild(knop);
+  });
+}
+
+function beantwoord(tekst, knop) {
+  if (vergrendeld) return;
+  vergrendeld = true;
+  const juisteTekst = tijdTekst(huidigeTijd);
+  const knoppen = optiesEl.querySelectorAll("button");
+  knoppen.forEach((k) => {
+    k.disabled = true;
+    if (k.textContent === juisteTekst) k.classList.add("goed");
+  });
+  if (tekst === juisteTekst) {
+    score++;
+    feedbackEl.textContent = "Goed gedaan! 🌟";
+    feedbackEl.classList.add("goed");
+  } else {
+    knop.classList.add("fout");
+    feedbackEl.textContent = "Helaas, het was " + juisteTekst + ".";
+    feedbackEl.classList.add("fout");
+  }
+  setTimeout(() => {
+    if (opdrachtNummer < AANTAL_OPDRACHTEN) {
+      nieuweOpdracht();
+    } else {
+      toonResultaat();
+    }
+  }, 1600);
+}
+
+function sterrenVoorScore(score, totaal) {
+  const verhouding = score / totaal;
+  if (verhouding >= 0.9) return 3;
+  if (verhouding >= 0.6) return 2;
+  if (verhouding >= 0.3) return 1;
+  return 0;
+}
+
+function toonResultaat() {
+  schermOefenen.classList.add("verborgen");
+  schermResultaat.classList.remove("verborgen");
+  const sterren = sterrenVoorScore(score, AANTAL_OPDRACHTEN);
+  document.getElementById("sterren").textContent =
+    "★".repeat(sterren) + "☆".repeat(3 - sterren);
+  document.getElementById("resultaat-titel").textContent =
+    "Je hebt " + score + " van de " + AANTAL_OPDRACHTEN + " goed!";
+  document.getElementById("resultaat-tekst").textContent =
+    sterren === 3 ? "Top! Je beheerst dit niveau." : "Nog een keer oefenen? Je wordt er beter van!";
+}
+
+document.getElementById("knop-opnieuw").addEventListener("click", () => {
+  score = 0;
+  opdrachtNummer = 0;
+  schermResultaat.classList.add("verborgen");
+  schermOefenen.classList.remove("verborgen");
+  nieuweOpdracht();
+});
+
+nieuweOpdracht();
+</script>
+</body>
+</html>
