@@ -143,6 +143,21 @@
   }
   .digitaal-instel .dubbelepunt { font-size: clamp(2rem, 8vw, 3rem); font-weight: 700; }
   .hint { font-size: clamp(1rem, 2.8vw, 1.2rem); color: #556; margin-bottom: 0.75rem; }
+  .digitaal-groot {
+    font-size: clamp(2.6rem, 10vw, 4rem);
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .05em;
+  }
+  .knop.secuur {
+    background: #fff;
+    color: var(--blauw);
+    border: 3px solid var(--blauw);
+    font-size: clamp(0.9rem, 2.4vw, 1.05rem);
+    padding: 0.5rem 1.2rem;
+    margin-top: 1.5rem;
+  }
 </style>
 </head>
 <body>
@@ -158,12 +173,14 @@
   <div class="voortgang" id="voortgang"></div>
   <p class="opdracht" id="opdracht"></p>
   <p class="hint verborgen" id="hint"></p>
+  <div class="digitaal-groot verborgen" id="digitaal-weergave"></div>
   <div class="klok-wrap" id="klok-wrap">
     <svg class="klok" id="klok" viewBox="-110 -110 220 220" aria-label="Analoge klok"></svg>
   </div>
   <div id="interactie"></div>
   <p class="feedback" id="feedback"></p>
   <button class="knop verborgen" id="knop-klaar">Klaar!</button>
+  <button class="knop secuur" id="knop-hoofdmenu">◀ Hoofdmenu</button>
 </div>
 
 <div id="scherm-resultaat" class="card verborgen">
@@ -226,15 +243,17 @@ function dagdeel(uur24) {
 }
 
 function woordTijd(t) {
-  const uur = t.uur;
+  const uur = ((t.uur - 1) % 12) + 1;
   const m = t.minuut;
   const volgend = (uur % 12) + 1;
   if (m === 0) return uur + " uur";
   if (m === 15) return "kwart over " + uur;
   if (m === 30) return "half " + volgend;
   if (m === 45) return "kwart voor " + volgend;
-  if (m < 30) return m + " over " + uur;
-  return (60 - m) + " voor half " + volgend;
+  if (m < 15) return m + " over " + uur;
+  if (m < 30) return (30 - m) + " voor half " + volgend;
+  if (m < 45) return (m - 30) + " over half " + volgend;
+  return (60 - m) + " voor " + volgend;
 }
 
 function digitaalTijd(t, type) {
@@ -245,7 +264,7 @@ function digitaalTijd(t, type) {
 
 function tijdTekst(t, niveau) {
   if (niveau.type === "analoog") return woordTijd(t);
-  return digitaalTijd(t, niveau.type);
+  return woordTijd(t) + " in de " + dagdeel(t.uur);
 }
 
 function toonKlok(uur, minuut, interactief, stap, wijzig) {
@@ -368,6 +387,7 @@ function toetsOpties(juisteTijd, niveau) {
     if (niveau.type === "digitaal24" && dagdeel(kandidaat.uur) !== dagdeel(juisteTijd.uur)) continue;
     opties.add(tekst);
   }
+  while (opties.size < 4 && beveiliging++ < 2000) opties.add("–");
   return Array.from(opties).sort(() => Math.random() - 0.5);
 }
 
@@ -405,6 +425,8 @@ function nieuweOpdracht() {
   knopKlaar.classList.add("verborgen");
   interactieEl.innerHTML = "";
   interactieEl.className = "";
+  $("digitaal-weergave").classList.add("verborgen");
+  $("klok-wrap").classList.remove("verborgen");
   huidigeTijd = maakTijd(niveau);
   modus = kiesModus(niveau);
   toonVoortgang();
@@ -415,7 +437,14 @@ function nieuweOpdracht() {
       hintEl.textContent = "Het is " + dagdeel(huidigeTijd.uur) + ".";
       hintEl.classList.remove("verborgen");
     }
-    toonKlok(huidigeTijd.uur, huidigeTijd.minuut, false);
+    if (niveau.type !== "analoog") {
+      const weergave = $("digitaal-weergave");
+      weergave.textContent = digitaalTijd(huidigeTijd, niveau.type);
+      weergave.classList.remove("verborgen");
+      $("klok-wrap").classList.add("verborgen");
+    } else {
+      toonKlok(huidigeTijd.uur, huidigeTijd.minuut, false);
+    }
     const opties = toetsOpties(huidigeTijd, niveau);
     const div = document.createElement("div");
     div.className = "opties";
@@ -423,6 +452,8 @@ function nieuweOpdracht() {
       const knop = document.createElement("button");
       knop.className = "optie";
       knop.textContent = tekst;
+      knop.style.fontSize = "clamp(0.95rem, 2.6vw, 1.2rem)";
+      knop.style.padding = "0.7rem 0.5rem";
       knop.addEventListener("click", () => beantwoordMeerkeuze(tekst, knop));
       div.appendChild(knop);
     });
@@ -499,11 +530,11 @@ function nieuweOpdracht() {
 }
 
 function juisteIngesteldeTijd() {
-  const doelUur = huidigeTijd.uur % 12;
-  const ingesteldUur = ((ingesteldeTijd.uur % 12) + 12) % 12;
   if (modus === "instellenDigitaal") {
     return ingesteldeTijd.uur === huidigeTijd.uur && ingesteldeTijd.minuut === huidigeTijd.minuut;
   }
+  const doelUur = huidigeTijd.uur % 12;
+  const ingesteldUur = ((ingesteldeTijd.uur % 12) + 12) % 12;
   return ingesteldUur === doelUur && ingesteldeTijd.minuut === huidigeTijd.minuut;
 }
 
@@ -635,6 +666,7 @@ function toonResultaat() {
 
 $("knop-opnieuw").addEventListener("click", () => startSessie(niveau));
 $("knop-terug").addEventListener("click", toonStartpagina);
+$("knop-hoofdmenu").addEventListener("click", toonStartpagina);
 
 toonStartpagina();
 </script>
