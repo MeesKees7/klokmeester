@@ -59,8 +59,9 @@
   .optie.fout { background: var(--rood); border-color: var(--rood); color: #fff; }
   .optie:disabled { cursor: default; opacity: .9; }
   .feedback {
-    min-height: 2.4rem;
-    margin-top: 1rem;
+    min-height: 1.6rem;
+    margin-top: 0.35rem;
+    margin-bottom: 0;
     font-size: clamp(1.05rem, 3vw, 1.3rem);
     font-weight: 600;
   }
@@ -94,12 +95,12 @@
   .knop:active { transform: scale(.97); }
   .knop.groot { font-size: clamp(1.2rem, 3.5vw, 1.5rem); padding: 0.9rem 2.2rem; }
   .knop.klaar {
-    margin-top: 0.4rem;
+    margin-top: 0;
   }
   .knop-plaatsing {
     display: flex;
     justify-content: center;
-    margin-top: 0.5rem;
+    margin-top: 0.15rem;
   }
   .knop-plaatsing .secuur {
     position: absolute;
@@ -168,7 +169,7 @@
     justify-content: center;
     align-items: flex-start;
     gap: 0;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
   }
   .digitaal-instel .deel { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
   .digitaal-instel .waarde {
@@ -341,7 +342,8 @@ function digitaalTijd(t, type) {
 }
 
 function tijdTekst(t, niveau) {
-  return woordTijd(t);
+  if (niveau.type === "analoog") return woordTijd(t);
+  return woordTijd(t) + " in de " + dagdeel(t.uur);
 }
 
 function toonKlok(uur, minuut, interactief, stap, wijzig) {
@@ -459,8 +461,12 @@ function toetsOpties(juisteTijd, niveau) {
   let beveiliging = 0;
   while (opties.size < 4 && beveiliging++ < 1000) {
     const kandidaat = maakTijd(niveau);
-    const tekst = tijdTekst(kandidaat, niveau);
+    let tekst = tijdTekst(kandidaat, niveau);
     if (tekst === juisteTekst) continue;
+    if (niveau.type === "digitaal24" && Math.random() < 0.4) {
+      tekst = woordTijd(kandidaat) + " in de " + willekeurig(DAGDELEN).naam;
+      if (tekst === juisteTekst) continue;
+    }
     opties.add(tekst);
   }
   while (opties.size < 4 && beveiliging++ < 2000) opties.add("–");
