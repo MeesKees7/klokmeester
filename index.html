@@ -172,7 +172,7 @@ function tekenKlok(uur, minuut) {
   const uurHoek = (uur % 12) * 30 + uurMinuten;
 
   const uurWijzer = document.createElementNS(NS, "line");
-  uurWijzer.setAttribute("x1", 0); uurWijzer.setAttribute("y1", 10);
+  uurWijzer.setAttribute("x1", 0); uurWijzer.setAttribute("y1", 0);
   uurWijzer.setAttribute("x2", Math.sin(uurHoek * Math.PI / 180) * 50);
   uurWijzer.setAttribute("y2", -Math.cos(uurHoek * Math.PI / 180) * 50);
   uurWijzer.setAttribute("stroke", "#1d3557");
@@ -181,7 +181,7 @@ function tekenKlok(uur, minuut) {
   klokEl.appendChild(uurWijzer);
 
   const minuutWijzer = document.createElementNS(NS, "line");
-  minuutWijzer.setAttribute("x1", 0); minuutWijzer.setAttribute("y1", 12);
+  minuutWijzer.setAttribute("x1", 0); minuutWijzer.setAttribute("y1", 0);
   minuutWijzer.setAttribute("x2", Math.sin(minHoek * Math.PI / 180) * 78);
   minuutWijzer.setAttribute("y2", -Math.cos(minHoek * Math.PI / 180) * 78);
   minuutWijzer.setAttribute("stroke", "#d9483b");
@@ -213,7 +213,7 @@ function toetsOpties(juisteTijd) {
   const juisteTekst = tijdTekst(juisteTijd);
   const opties = new Set([juisteTekst]);
   const juisteUur = juisteTijd.minuut === 0 ? juisteTijd.uur : ((juisteTijd.uur % 12) + 1);
-  while (opties.size < 3) {
+  while (opties.size < 4) {
     const kandidaatUur = willekeurigUur();
     const kandidaatMinuut = Math.random() < 0.5 ? 0 : 30;
     const kandidaat = { uur: kandidaatUur, minuut: kandidaatMinuut };
