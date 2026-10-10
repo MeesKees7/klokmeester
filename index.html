@@ -38,7 +38,7 @@
   svg.klok { width: min(320px, 78vw); height: auto; touch-action: manipulation; }
   .opties {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
   }
   .optie {
@@ -157,10 +157,10 @@ function tekenKlok(uur, minuut) {
 
   for (let i = 1; i <= 12; i++) {
     const tekst = document.createElementNS(NS, "text");
-    tekst.setAttribute("x", Math.sin(i * Math.PI / 6) * 76);
-    tekst.setAttribute("y", -Math.cos(i * Math.PI / 6) * 76 + 9);
+    tekst.setAttribute("x", Math.sin(i * Math.PI / 6) * 68);
+    tekst.setAttribute("y", -Math.cos(i * Math.PI / 6) * 68 + 7);
     tekst.setAttribute("text-anchor", "middle");
-    tekst.setAttribute("font-size", 22);
+    tekst.setAttribute("font-size", 18);
     tekst.setAttribute("font-weight", 600);
     tekst.setAttribute("fill", "#1d3557");
     tekst.textContent = i;
