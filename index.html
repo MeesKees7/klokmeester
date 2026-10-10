@@ -98,20 +98,26 @@
   }
   .knop-plaatsing {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
+    justify-content: center;
     margin-top: 0.5rem;
   }
-  .knop-plaatsing .knop { margin-top: 0; }
-  .knop-plaatsing .secuur { margin-left: auto; }
+  .knop-plaatsing .secuur {
+    position: absolute;
+    right: 0.6rem;
+    bottom: 0.4rem;
+  }
+  .card { position: relative; }
   .sterren { font-size: clamp(2.2rem, 8vw, 3.2rem); letter-spacing: .3em; margin: .5rem 0 1rem; }
   .verborgen { display: none; }
 
   .kolom-wrapper {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
     width: min(960px, 100%);
+  }
+  @media (max-width: 560px) {
+    .kolom-wrapper { grid-template-columns: 1fr; }
   }
   .kolom { text-align: left; }
   .kolom-kop {
@@ -138,14 +144,14 @@
   .niveaus {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 0.45rem;
   }
   #niveau-label { text-align: center; }
   .niveau-kaart {
     background: #fff;
-    border: 3px solid var(--blauw);
-    border-radius: 0.9rem;
-    padding: 0.9rem 0.6rem;
+    border: 2px solid var(--blauw);
+    border-radius: 0.7rem;
+    padding: 0.45rem 0.6rem;
     cursor: pointer;
     font-family: inherit;
     transition: transform .08s, box-shadow .15s;
@@ -153,7 +159,8 @@
   .niveau-kaart:active { transform: scale(.97); }
   .niveau-kaart:hover { box-shadow: 0 4px 12px rgba(44,111,187,.25); }
   .niveau-kaart .nr { font-size: 0.85rem; color: #556; font-weight: 600; }
-  .niveau-kaart .naam { font-size: clamp(0.95rem, 2.6vw, 1.1rem); font-weight: 700; color: var(--donker); margin: 0.2rem 0 0.35rem; min-height: 2.4em; display: flex; align-items: center; justify-content: center; }
+  .niveau-kaart .naam { font-size: clamp(0.85rem, 2.2vw, 1rem); font-weight: 700; color: var(--donker); margin: 0.1rem 0 0.15rem; min-height: 2.2em; display: flex; align-items: center; }
+  .niveau-kaart .kaart-sterren { margin-top: 0.1rem; }
   .niveau-kaart .kaart-sterren { color: #f4b400; font-size: 1.1rem; letter-spacing: .12em; }
 
   .digitaal-instel {
@@ -334,8 +341,7 @@ function digitaalTijd(t, type) {
 }
 
 function tijdTekst(t, niveau) {
-  if (niveau.type === "analoog") return woordTijd(t);
-  return woordTijd(t) + " in de " + dagdeel(t.uur);
+  return woordTijd(t);
 }
 
 function toonKlok(uur, minuut, interactief, stap, wijzig) {
@@ -455,7 +461,6 @@ function toetsOpties(juisteTijd, niveau) {
     const kandidaat = maakTijd(niveau);
     const tekst = tijdTekst(kandidaat, niveau);
     if (tekst === juisteTekst) continue;
-    if (niveau.type === "digitaal24" && dagdeel(kandidaat.uur) !== dagdeel(juisteTijd.uur)) continue;
     opties.add(tekst);
   }
   while (opties.size < 4 && beveiliging++ < 2000) opties.add("–");
@@ -504,10 +509,6 @@ function nieuweOpdracht() {
 
   if (modus === "aanwijzen") {
     opdrachtEl.textContent = "Hoe laat is het?";
-    if (niveau.type === "digitaal24") {
-      hintEl.textContent = "Het is " + dagdeel(huidigeTijd.uur) + ".";
-      hintEl.classList.remove("verborgen");
-    }
     if (niveau.type !== "analoog") {
       const weergave = $("digitaal-weergave");
       weergave.textContent = digitaalTijd(huidigeTijd, niveau.type);
@@ -531,10 +532,6 @@ function nieuweOpdracht() {
     interactieEl.appendChild(div);
   } else if (modus === "instellenAnaloog") {
     opdrachtEl.textContent = "Zet de wijzers op: " + tijdTekst(huidigeTijd, niveau);
-    if (niveau.type === "digitaal24") {
-      hintEl.textContent = "Het is " + dagdeel(huidigeTijd.uur) + ".";
-      hintEl.classList.remove("verborgen");
-    }
     ingesteldeTijd = { uur: 12, minuut: 0 };
     const teken = () => toonKlok(ingesteldeTijd.uur, ingesteldeTijd.minuut, true, niveau.stap, (d) => {
       if (d.minuut !== undefined) ingesteldeTijd.minuut = d.minuut;
@@ -546,10 +543,7 @@ function nieuweOpdracht() {
   } else {
     opdrachtEl.textContent = "Stel deze tijd in op de digitale klok:";
     const weergave = $("digitaal-weergave");
-    weergave.textContent = tijdTekst(huidigeTijd, niveau).replace(/ in de \w+$/, "");
-    if (niveau.type === "digitaal24") {
-      weergave.textContent += " (" + dagdeel(huidigeTijd.uur) + ")";
-    }
+    weergave.textContent = tijdTekst(huidigeTijd, niveau);
     weergave.classList.remove("verborgen");
     $("klok-wrap").classList.add("verborgen");
     const maxUur = niveau.type === "digitaal24" ? 23 : 12;
