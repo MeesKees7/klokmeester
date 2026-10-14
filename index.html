@@ -236,6 +236,24 @@
   }
   #scherm-welkom .knop { display: block; margin: 0.6rem auto; min-width: min(300px, 80%); }
   #welkom-gast-hint { margin-top: 1rem; }
+  .leerling-lijst {
+    text-align: left;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 2px solid #d7e0ec;
+    border-radius: 0.7rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .leerling-lijst:empty::after { content: "Nog geen leerlingen."; color: #7a8aa0; }
+  .leerling-rij {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #eef2f8;
+    font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+  }
+  .leerling-rij:last-child { border-bottom: none; }
   .account-balk {
     display: flex;
     justify-content: space-between;
@@ -278,10 +296,27 @@
   <button class="knop secuur" id="knop-login-terug">◀ Terug</button>
 </div>
 
+<div id="scherm-docent" class="card verborgen">
+  <p class="sub">Leerlingen van je klas</p>
+  <div id="docent-lijst" class="leerling-lijst"></div>
+  <p class="sub" style="margin-top:1.5rem">Nieuwe leerling</p>
+  <div class="login-form">
+    <input type="text" id="nieuwe-roepnaam" class="login-input" placeholder="Roepnaam (bijv. Emma)">
+    <input type="text" id="nieuwe-email" class="login-input" placeholder="Gebruikersnaam (bijv. emma@klas6)">
+    <input type="text" id="nieuwe-ww" class="login-input" placeholder="Wachtwoord (min. 6 tekens)">
+  </div>
+  <button class="knop" id="knop-nieuwe-leerling">Leerling aanmaken</button>
+  <p class="feedback" id="docent-feedback"></p>
+  <button class="knop secuur" id="knop-docent-terug">◀ Hoofdmenu</button>
+</div>
+
 <div id="startpagina">
   <div class="account-balk verborgen" id="account-balk">
     <span id="account-naam"></span>
-    <button class="knop" id="knop-uitloggen">Uitloggen</button>
+    <span>
+      <button class="knop verborgen" id="knop-docent-leerlingen">Leerlingen</button>
+      <button class="knop" id="knop-uitloggen">Uitloggen</button>
+    </span>
   </div>
   <div class="kolom-wrapper">
     <div class="kolom card">
@@ -774,6 +809,7 @@ function toonStartpagina() {
   $("startpagina").classList.remove("verborgen");
   const ingelogd = Auth.ingelogd();
   $("account-balk").classList.toggle("verborgen", !ingelogd);
+  $("knop-docent-leerlingen").classList.toggle("verborgen", !(ingelogd && Auth.isDocent()));
   if (ingelogd) {
     $("account-naam").textContent =
       "Hoi " + Auth.gebruiker().roepnaam + (Auth.isDocent() ? " (docent)" : "");
@@ -840,9 +876,29 @@ $("knop-terug").addEventListener("click", toonStartpagina);
 $("knop-hoofdmenu").addEventListener("click", toonStartpagina);
 
 function toonWelkom() {
-  ["startpagina", "scherm-oefenen", "scherm-resultaat", "scherm-login"].forEach((id) =>
+  ["startpagina", "scherm-oefenen", "scherm-resultaat", "scherm-login", "scherm-docent"].forEach((id) =>
     $(id).classList.add("verborgen"));
   $("scherm-welkom").classList.remove("verborgen");
+}
+
+async function toonDocentScherm() {
+  ["startpagina", "scherm-oefenen", "scherm-resultaat", "scherm-welkom", "scherm-login"].forEach((id) =>
+    $(id).classList.add("verborgen"));
+  $("docent-feedback").textContent = "";
+  $("docent-feedback").className = "feedback";
+  $("nieuwe-roepnaam").value = "";
+  $("nieuwe-email").value = "";
+  $("nieuwe-ww").value = "";
+  $("scherm-docent").classList.remove("verborgen");
+  const lijst = $("docent-lijst");
+  lijst.innerHTML = "";
+  const rijen = await Auth.laadKlas();
+  rijen.forEach((r) => {
+    const div = document.createElement("div");
+    div.className = "leerling-rij";
+    div.innerHTML = "<span>" + r.roepnaam + "</span><span>\u2713</span>";
+    lijst.appendChild(div);
+  });
 }
 
 function toonLogin() {
@@ -859,6 +915,46 @@ function toonLogin() {
 $("knop-naar-login").addEventListener("click", toonLogin);
 $("knop-login-terug").addEventListener("click", toonWelkom);
 $("knop-gast").addEventListener("click", () => { toonStartpagina(); });
+$("knop-docent-leerlingen").addEventListener("click", toonDocentScherm);
+$("knop-docent-terug").addEventListener("click", toonStartpagina);
+
+$("knop-nieuwe-leerling").addEventListener("click", async () => {
+  const roepnaam = $("nieuwe-roepnaam").value.trim();
+  const email = $("nieuwe-email").value.trim();
+  const wachtwoord = $("nieuwe-ww").value;
+  const fb = $("docent-feedback");
+  fb.textContent = "";
+  fb.className = "feedback";
+  if (!roepnaam || !email || !wachtwoord) {
+    fb.textContent = "Vul alle drie de vakjes in.";
+    fb.classList.add("fout");
+    return;
+  }
+  if (wachtwoord.length < 6) {
+    fb.textContent = "Het wachtwoord is te kort (min. 6 tekens).";
+    fb.classList.add("fout");
+    return;
+  }
+  try {
+    await Auth.maakLeerling(email, wachtwoord, roepnaam);
+    fb.textContent = roepnaam + " is toegevoegd!";
+    fb.classList.add("goed");
+    $("nieuwe-roepnaam").value = "";
+    $("nieuwe-email").value = "";
+    $("nieuwe-ww").value = "";
+    const lijst = $("docent-lijst");
+    lijst.innerHTML = "";
+    (await Auth.laadKlas()).forEach((r) => {
+      const div = document.createElement("div");
+      div.className = "leerling-rij";
+      div.innerHTML = "<span>" + r.roepnaam + "</span><span>\u2713</span>";
+      lijst.appendChild(div);
+    });
+  } catch (e) {
+    fb.textContent = "Dat lukte niet. Bestaat de gebruikersnaam al?";
+    fb.classList.add("fout");
+  }
+});
 
 $("knop-uitloggen").addEventListener("click", () => {
   Auth.uitloggen();

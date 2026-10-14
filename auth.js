@@ -137,6 +137,28 @@ const Auth = (() => {
     }
   };
 
+  const maakLeerling = async (email, wachtwoord, roepnaam) => {
+    if (!isDocent()) throw new Error("Alleen de docent kan dit");
+    await api("/rest/v1/rpc/km_maak_leerling", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ p_email: email, p_wachtwoord: wachtwoord, p_roepnaam: roepnaam })
+    });
+  };
+
+  const laadKlas = async () => {
+    if (!isDocent()) return [];
+    try {
+      const rijen = await api("/rest/v1/km_gebruikers?select=roepnaam&rol=eq.leerling&order=roepnaam.asc", {
+        headers: headers()
+      });
+      return rijen || [];
+    } catch (e) {
+      console.error("Klas laden mislukt:", e);
+      return [];
+    }
+  };
+
   return {
     beschikbaar: cfgOk,
     login,
@@ -147,6 +169,8 @@ const Auth = (() => {
     isDocent,
     gebruiker,
     bewaarResultaat,
-    laadRecords
+    laadRecords,
+    maakLeerling,
+    laadKlas
   };
 })();
