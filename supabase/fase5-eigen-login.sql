@@ -154,6 +154,10 @@ $$;
 -- ------------------------------------------------------------
 -- 5. Beheer door de docent
 -- ------------------------------------------------------------
+-- De vorige versie van km_maak_leerling had een parameter p_email;
+-- PostgreSQL staat geen andere parameternaam toe zonder drop.
+drop function if exists public.km_maak_leerling(text, text, text);
+
 create or replace function public.km_maak_leerling(
   p_inlognaam  text,
   p_wachtwoord text,
