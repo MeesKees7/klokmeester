@@ -97,7 +97,7 @@ from nieuw;
 insert into public.km_gebruikers (user_id, roepnaam, rol, klas_id)
 select u.id, u.raw_user_meta_data ->> 'roepnaam', 'leerling', k.id
 from auth.users u
-cross join (select min(id) as id from public.km_klassen) k
+cross join (select id from public.km_klassen order by created_at asc limit 1) k
 where u.email in ('leerling1@klokmeester.nl', 'leerling2@klokmeester.nl', 'leerling3@klokmeester.nl')
   and u.raw_user_meta_data ->> 'rol' = 'leerling'
 on conflict (user_id) do nothing;
