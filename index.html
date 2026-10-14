@@ -1064,7 +1064,7 @@ $("knop-nieuwe-leerling").addEventListener("click", async () => {
   const fb = $("docent-feedback");
   fb.textContent = "";
   fb.className = "feedback";
-  if (!roepnaam || !email || !wachtwoord) {
+  if (!roepnaam || !inlognaam || !wachtwoord) {
     fb.textContent = "Vul alle drie de vakjes in.";
     fb.classList.add("fout");
     return;
@@ -1104,7 +1104,11 @@ $("knop-uitloggen").addEventListener("click", () => {
 async function voerLoginUit() {
   const inlognaam = $("login-email").value.trim();
   const wachtwoord = $("login-wachtwoord").value;
-  if (!email || !wachtwoord) return;
+  if (!inlognaam || !wachtwoord) {
+    $("login-feedback").textContent = "Vul je inlognaam en wachtwoord in.";
+    $("login-feedback").classList.add("fout");
+    return;
+  }
   $("knop-login").disabled = true;
   $("login-feedback").textContent = "";
   try {
