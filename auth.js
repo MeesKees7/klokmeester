@@ -122,6 +122,55 @@ const Auth = (() => {
   };
 
   // Records van de ingelogde leerling ophalen: { niveaunummer: sterren }.
+  const rpc = (naam, params) => api("/rest/v1/rpc/" + naam, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(params)
+  });
+
+  const maakLeerling = async (email, wachtwoord, roepnaam) => {
+    if (!isDocent()) throw new Error("Alleen de docent kan dit");
+    await rpc("km_maak_leerling", { p_email: email, p_wachtwoord: wachtwoord, p_roepnaam: roepnaam });
+  };
+
+  const laadKlas = async () => {
+    if (!isDocent()) return [];
+    try {
+      const rijen = await api("/rest/v1/km_gebruikers?select=user_id,roepnaam&rol=eq.leerling&order=roepnaam.asc", {
+        headers: headers()
+      });
+      return rijen || [];
+    } catch (e) {
+      console.error("Klas laden mislukt:", e);
+      return [];
+    }
+  };
+
+  const zetRoepnaam = async (userId, roepnaam) => {
+    await rpc("km_zet_roepnaam", { p_user: userId, p_roepnaam: roepnaam });
+  };
+
+  const resetWachtwoord = async (userId, wachtwoord) => {
+    await rpc("km_reset_wachtwoord", { p_user: userId, p_wachtwoord: wachtwoord });
+  };
+
+  const verwijderLeerling = async (userId) => {
+    await rpc("km_verwijder_leerling", { p_user: userId });
+  };
+
+  const laadResultaten = async (userId) => {
+    try {
+      const rijen = await api(
+        "/rest/v1/km_resultaten?select=niveau,goed,totaal,sterren,created_at&leerling_id=eq." + userId + "&order=created_at.desc",
+        { headers: headers() }
+      );
+      return rijen || [];
+    } catch (e) {
+      console.error("Resultaten laden mislukt:", e);
+      return [];
+    }
+  };
+
   const laadRecords = async () => {
     if (!isLeerling()) return {};
     try {
@@ -137,28 +186,6 @@ const Auth = (() => {
     }
   };
 
-  const maakLeerling = async (email, wachtwoord, roepnaam) => {
-    if (!isDocent()) throw new Error("Alleen de docent kan dit");
-    await api("/rest/v1/rpc/km_maak_leerling", {
-      method: "POST",
-      headers: headers(),
-      body: JSON.stringify({ p_email: email, p_wachtwoord: wachtwoord, p_roepnaam: roepnaam })
-    });
-  };
-
-  const laadKlas = async () => {
-    if (!isDocent()) return [];
-    try {
-      const rijen = await api("/rest/v1/km_gebruikers?select=roepnaam&rol=eq.leerling&order=roepnaam.asc", {
-        headers: headers()
-      });
-      return rijen || [];
-    } catch (e) {
-      console.error("Klas laden mislukt:", e);
-      return [];
-    }
-  };
-
   return {
     beschikbaar: cfgOk,
     login,
@@ -171,6 +198,10 @@ const Auth = (() => {
     bewaarResultaat,
     laadRecords,
     maakLeerling,
-    laadKlas
+    laadKlas,
+    zetRoepnaam,
+    resetWachtwoord,
+    verwijderLeerling,
+    laadResultaten
   };
 })();

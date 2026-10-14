@@ -254,6 +254,22 @@
     font-size: clamp(0.95rem, 2.5vw, 1.1rem);
   }
   .leerling-rij:last-child { border-bottom: none; }
+  .leerling-rij .acties { display: flex; gap: 0.35rem; }
+  .leerling-rij .acties button {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+    border: 2px solid var(--blauw);
+    border-radius: 0.5rem;
+    background: #fff;
+    color: var(--blauw);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .leerling-rij .acties button.waarschuwing { border-color: var(--rood); color: var(--rood); }
+  .resultaat-tabel { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  .resultaat-tabel th, .resultaat-tabel td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid #eef2f8; }
+  .resultaat-tabel th { color: #556; font-weight: 600; }
+  .mini-titel { font-weight: 700; margin: 0.75rem 0 0.25rem; }
   .account-balk {
     display: flex;
     justify-content: space-between;
@@ -900,9 +916,104 @@ async function toonDocentScherm() {
   rijen.forEach((r) => {
     const div = document.createElement("div");
     div.className = "leerling-rij";
-    div.innerHTML = "<span>" + r.roepnaam + "</span><span>\u2713</span>";
+    const naam = document.createElement("span");
+    naam.textContent = r.roepnaam;
+    const acties = document.createElement("span");
+    acties.className = "acties";
+    const knopResultaten = document.createElement("button");
+    knopResultaten.textContent = "Resultaten";
+    knopResultaten.addEventListener("click", () => toonLeerlingResultaten(r));
+    const knopNaam = document.createElement("button");
+    knopNaam.textContent = "Naam";
+    knopNaam.addEventListener("click", () => wijzigRoepnaam(r));
+    const knopWw = document.createElement("button");
+    knopWw.textContent = "Wachtwoord";
+    knopWw.addEventListener("click", () => resetWachtwoord(r));
+    const knopVerwijder = document.createElement("button");
+    knopVerwijder.textContent = "Verwijderen";
+    knopVerwijder.className = "waarschuwing";
+    knopVerwijder.addEventListener("click", () => verwijderLeerling(r, div));
+    acties.append(knopResultaten, knopNaam, knopWw, knopVerwijder);
+    div.append(naam, acties);
     lijst.appendChild(div);
   });
+}
+
+async function toonLeerlingResultaten(leerling) {
+  const fb = $("docent-feedback");
+  fb.textContent = "Resultaten van " + leerling.roepnaam + " worden geladen…";
+  fb.className = "feedback";
+  const rijen = await Auth.laadResultaten(leerling.user_id);
+  fb.textContent = "";
+  const lijst = $("docent-lijst");
+  lijst.innerHTML = "";
+  if (!rijen.length) {
+    const p = document.createElement("p");
+    p.textContent = leerling.roepnaam + " heeft nog niet geoefend.";
+    lijst.appendChild(p);
+  } else {
+    const tabel = document.createElement("table");
+    tabel.className = "resultaat-tabel";
+    tabel.innerHTML = "<tr><th>Datum</th><th>Niveau</th><th>Goed</th><th>Sterren</th></tr>";
+    rijen.forEach((r) => {
+      const tr = document.createElement("tr");
+      const datum = new Date(r.created_at).toLocaleDateString("nl-NL");
+      tr.innerHTML = "<td>" + datum + "</td><td>Niveau " + r.niveau + "</td><td>" + r.goed + " / " + r.totaal + "</td><td>" + "\u2605".repeat(r.sterren) + "\u2606".repeat(3 - r.sterren) + "</td>";
+      tabel.appendChild(tr);
+    });
+    lijst.appendChild(tabel);
+  }
+  const terug = document.createElement("button");
+  terug.className = "knop secuur";
+  terug.style.marginTop = "1rem";
+  terug.textContent = "\u25c0 Terug naar leerlingen";
+  terug.addEventListener("click", toonDocentScherm);
+  lijst.appendChild(terug);
+}
+
+async function wijzigRoepnaam(leerling) {
+  const naam = prompt("Nieuwe roepnaam voor " + leerling.roepnaam + ":", leerling.roepnaam);
+  if (naam === null) return;
+  const nieuw = naam.trim();
+  if (!nieuw || nieuw === leerling.roepnaam) return;
+  const fb = $("docent-feedback");
+  try {
+    await Auth.zetRoepnaam(leerling.user_id, nieuw);
+    fb.textContent = "Roepnaam gewijzigd.";
+    fb.className = "feedback goed";
+    toonDocentScherm();
+  } catch (e) {
+    fb.textContent = "Dat lukte niet.";
+    fb.className = "feedback fout";
+  }
+}
+
+async function resetWachtwoord(leerling) {
+  const ww = prompt("Nieuw wachtwoord voor " + leerling.roepnaam + " (min. 6 tekens):");
+  if (!ww) return;
+  const fb = $("docent-feedback");
+  try {
+    await Auth.resetWachtwoord(leerling.user_id, ww);
+    fb.textContent = "Wachtwoord gewijzigd voor " + leerling.roepnaam + ".";
+    fb.className = "feedback goed";
+  } catch (e) {
+    fb.textContent = "Dat lukte niet. Is het wachtwoord lang genoeg?";
+    fb.className = "feedback fout";
+  }
+}
+
+async function verwijderLeerling(leerling, rij) {
+  if (!confirm(leerling.roepnaam + " verwijderen? Alle resultaten gaan ook weg. Dit kan niet meer terug.")) return;
+  const fb = $("docent-feedback");
+  try {
+    await Auth.verwijderLeerling(leerling.user_id);
+    fb.textContent = leerling.roepnaam + " is verwijderd.";
+    fb.className = "feedback goed";
+    rij.remove();
+  } catch (e) {
+    fb.textContent = "Verwijderen mislukt.";
+    fb.className = "feedback fout";
+  }
 }
 
 function toonLogin() {
