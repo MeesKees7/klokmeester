@@ -130,13 +130,26 @@ const Auth = (() => {
 
   const maakLeerling = async (email, wachtwoord, roepnaam) => {
     if (!isDocent()) throw new Error("Alleen de docent kan dit");
-    await rpc("km_maak_leerling", { p_email: email, p_wachtwoord: wachtwoord, p_roepnaam: roepnaam });
+    // Account via de gewone signup-api (werkt met de anon-key en maakt
+    // auth.identities netjes aan). De sessie die terugkomt is van de NIEUWE
+    // leerling en wordt bewust genegeerd: de docent blijft ingelogd.
+    const data = await api("/auth/v1/signup", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ email: email, password: wachtwoord, data: { roepnaam: roepnaam, rol: "leerling" } })
+    });
+    if (!data || !data.user) throw new Error("Account aanmaken mislukt");
+    // Daarna (als docent): bevestigen (geen echte e-mails),
+    // aan de klas koppelen en de inlognaam bewaren.
+    await rpc("km_bevestig_account", { p_user: data.user.id });
+    await rpc("km_koppel_aan_klas", { p_user: data.user.id });
+    return data.user.id;
   };
 
   const laadKlas = async () => {
     if (!isDocent()) return [];
     try {
-      const rijen = await api("/rest/v1/km_gebruikers?select=user_id,roepnaam&rol=eq.leerling&order=roepnaam.asc", {
+      const rijen = await api("/rest/v1/km_gebruikers?select=user_id,roepnaam,inlognaam&rol=eq.leerling&order=roepnaam.asc", {
         headers: headers()
       });
       return rijen || [];
@@ -148,6 +161,10 @@ const Auth = (() => {
 
   const zetRoepnaam = async (userId, roepnaam) => {
     await rpc("km_zet_roepnaam", { p_user: userId, p_roepnaam: roepnaam });
+  };
+
+  const koppelAanKlas = async (userId) => {
+    await rpc("km_koppel_aan_klas", { p_user: userId });
   };
 
   const resetWachtwoord = async (userId, wachtwoord) => {
@@ -199,6 +216,7 @@ const Auth = (() => {
     laadRecords,
     maakLeerling,
     laadKlas,
+    koppelAanKlas,
     zetRoepnaam,
     resetWachtwoord,
     verwijderLeerling,
