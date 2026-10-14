@@ -7,7 +7,8 @@ inhoud en scope; dit bestand beschrijft hoe we werken.
 ## 1. Projectoverzicht
 
 - **App:** Oefenapp klokkijken voor basisschoolleerlingen (groep 6), analoog én digitaal.
-- **Stack (v1):** één zelfstandig `index.html` (vanilla HTML/CSS/JS, geen dependencies of build-stap).
+- **Stack (v1):** vanilla HTML/CSS/JS, geen frameworks en geen build-stap. JS en CSS mogen in
+  aparte bestanden (bijv. `app.js`, `style.css`); andere bestanden zijn ook toegestaan.
   Fase 3 voegt Supabase (PostgreSQL + auth) toe, met hosting op Vercel/Netlify.
 - **Doelgroep:** kinderen van 9–10 jaar op Chromebooks/laptops; touch (digibord, telefoon) moet altijd werken.
 - **Taal:** alle UI-teksten in gewone, korte kindertaal, in het Nederlands.
@@ -59,11 +60,16 @@ inhoud en scope; dit bestand beschrijft hoe we werken.
 
 ## 5. Technische afspraken
 
-- Eén bestand (`index.html`) zolang dat houdbaar is; splits pas bij fase 3 (auth/db) als het echt nodig is.
+- Bestandsstructuur mag gesplitst worden (`index.html` + `app.js` + `style.css` e.d.); houd de bestanden klein en duidelijk benoemd.
 - Geen frameworks, geen build-stap, geen npm-dependencies in v1.
+- Deployen gaat via GitHub (koppeling Vercel/Netlify met de repo): push naar `main` = live.
 - Voortgang tijdelijk in `localStorage` (`klokmeester_voortgang_v1`) totdat fase 3 (database) dit vervangt. Sleutel = niveau­nummer; bij wijzigingen in de niveau­indeling de opslag-key laten staan (of een nieuwe versie-suffix gebruiken).
 - Gastmodus slaat niets op (ook niet na fase 3).
 - Fase 3 en later: Supabase (Postgres) + auth; rollen `leerling` en `docent`; datastructuur voorbereid op meerdere docenten/klassen (docent → klas(sen) → leerlingen); AVG-minimalisatie: alleen (roep)naam, geen foto/geboortedatum; geen selfservice-registratie (kinderen <13, docent maakt accounts aan).
+- **Supabase-project (aangemaakt door opdrachtgever):** URL `https://sotrwsxrcbmdwldloubb.supabase.co`
+  — de REST-endpoints staan onder `/rest/v1/<tabel>`. De `anon`-API-sleutel wordt apart
+  gedeeld en hoort níet hard-coded in de repo; zet die in een config/omgevingsvariabele
+  (bijv. `supabase-config.js` die op `.gitignore` staat, of de Vercel/Netlify-omgeving).
 
 ## 6. Werkwijze
 
