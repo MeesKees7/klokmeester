@@ -803,10 +803,17 @@ function bewaarSterren(nr, sterren) {
   }
 }
 
+const ALLE_SCHERMEN = [
+  "scherm-welkom", "scherm-login", "scherm-docent",
+  "startpagina", "scherm-oefenen", "scherm-resultaat"
+];
+
+function toonScherm(id) {
+  ALLE_SCHERMEN.forEach((s) => $(s).classList.toggle("verborgen", s !== id));
+}
+
 function toonStartpagina() {
-  $("scherm-oefenen").classList.add("verborgen");
-  $("scherm-resultaat").classList.add("verborgen");
-  $("startpagina").classList.remove("verborgen");
+  toonScherm("startpagina");
   const ingelogd = Auth.ingelogd();
   $("account-balk").classList.toggle("verborgen", !ingelogd);
   $("knop-docent-leerlingen").classList.toggle("verborgen", !(ingelogd && Auth.isDocent()));
@@ -876,14 +883,11 @@ $("knop-terug").addEventListener("click", toonStartpagina);
 $("knop-hoofdmenu").addEventListener("click", toonStartpagina);
 
 function toonWelkom() {
-  ["startpagina", "scherm-oefenen", "scherm-resultaat", "scherm-login", "scherm-docent"].forEach((id) =>
-    $(id).classList.add("verborgen"));
-  $("scherm-welkom").classList.remove("verborgen");
+  toonScherm("scherm-welkom");
 }
 
 async function toonDocentScherm() {
-  ["startpagina", "scherm-oefenen", "scherm-resultaat", "scherm-welkom", "scherm-login"].forEach((id) =>
-    $(id).classList.add("verborgen"));
+  toonScherm("scherm-docent");
   $("docent-feedback").textContent = "";
   $("docent-feedback").className = "feedback";
   $("nieuwe-roepnaam").value = "";
@@ -902,8 +906,7 @@ async function toonDocentScherm() {
 }
 
 function toonLogin() {
-  ["startpagina", "scherm-oefenen", "scherm-resultaat", "scherm-welkom"].forEach((id) =>
-    $(id).classList.add("verborgen"));
+  toonScherm("scherm-login");
   $("login-feedback").textContent = "";
   $("login-feedback").className = "feedback";
   $("login-email").value = "";
@@ -985,12 +988,13 @@ $("scherm-login").addEventListener("keydown", (e) => {
 });
 
 (async function start() {
-  if (!Auth.beschikbaar) { toonStartpagina(); return; }
+  if (!Auth.beschikbaar) { toonWelkom(); return; }
   try {
     const gebruiker = await Auth.herstelSessie();
     if (gebruiker && Auth.isLeerling()) serverRecords = await Auth.laadRecords();
   } catch {}
-  toonStartpagina();
+  if (Auth.ingelogd()) toonStartpagina();
+  else toonWelkom();
 })();
 </script>
 </body>
