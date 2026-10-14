@@ -84,5 +84,9 @@ inhoud en scope; dit bestand beschrijft hoe we werken.
 
 1. ✅ Fase 1 — klok + niveau 1 (klaar, getest).
 2. ✅ Fase 2 — 10 niveaus, 3 toetsvormen, sterren, startpagina (klaar, meerdere feedbackrondes verwerkt).
-3. ⏳ Fase 3 — Supabase + auth + accounts + resultaten bewaren; gastmodus blijft permanent.
+3. 🔨 Fase 3 — Supabase + auth + accounts + resultaten bewaren; gastmodus blijft permanent.
+   Status: frontend (welkom/loginscherm, sessiebehoud, resultaten naar `km_resultaten`/`km_records`)
+   en SQL-scripts (`supabase/fase3-setup.sql` + `fase3-seed.sql`) staan klaar;
+   nog uitvoeren: scripts in de Supabase SQL-editor draaien, `supabase-config.js` aanmaken
+   (anon-key, zie `supabase-config.example.js`) en testmoment 3 doorlopen.
 4. Daarna: fase 4 (docentdashboard) en fase 5 (daagtaak, polish, publicatie).

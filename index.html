@@ -219,13 +219,70 @@
     padding: 0.4rem 0.8rem;
     margin-top: 2.5rem;
   }
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-width: 340px;
+    margin: 0 auto 0.5rem;
+  }
+  .login-input {
+    font-size: clamp(1.1rem, 3vw, 1.3rem);
+    font-family: inherit;
+    padding: 0.8rem 1rem;
+    border: 3px solid var(--blauw);
+    border-radius: 0.8rem;
+    width: 100%;
+  }
+  #scherm-welkom .knop { display: block; margin: 0.6rem auto; min-width: min(300px, 80%); }
+  #welkom-gast-hint { margin-top: 1rem; }
+  .account-balk {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: min(960px, 100%);
+    margin-bottom: 0.5rem;
+    font-size: clamp(0.9rem, 2.4vw, 1.05rem);
+  }
+  .account-balk .knop {
+    margin-top: 0;
+    padding: 0.4rem 1rem;
+    font-size: clamp(0.85rem, 2.2vw, 1rem);
+    background: none;
+    color: #7a8aa0;
+    border: 2px solid #c4cedd;
+  }
 </style>
 </head>
 <body>
 
 <h1>🕐 KlokMeester</h1>
 
+<div id="scherm-welkom" class="card verborgen">
+  <p class="sub">Ga je oefenen met klokkijken?</p>
+  <button class="knop groot" id="knop-naar-login">Inloggen</button>
+  <button class="knop groot" id="knop-gast">Zonder account oefenen</button>
+  <p class="hint" id="welkom-gast-hint">Zonder account bewaart de app je sterren niet.</p>
+</div>
+
+<div id="scherm-login" class="card verborgen">
+  <p class="sub">Log in met je account</p>
+  <div class="login-form">
+    <label class="verborgen" for="login-email">Gebruikersnaam</label>
+    <input type="text" id="login-email" class="login-input" placeholder="Gebruikersnaam" autocomplete="username">
+    <label class="verborgen" for="login-wachtwoord">Wachtwoord</label>
+    <input type="password" id="login-wachtwoord" class="login-input" placeholder="Wachtwoord" autocomplete="current-password">
+  </div>
+  <button class="knop groot" id="knop-login">Inloggen</button>
+  <p class="feedback" id="login-feedback"></p>
+  <button class="knop secuur" id="knop-login-terug">◀ Terug</button>
+</div>
+
 <div id="startpagina">
+  <div class="account-balk verborgen" id="account-balk">
+    <span id="account-naam"></span>
+    <button class="knop" id="knop-uitloggen">Uitloggen</button>
+  </div>
   <div class="kolom-wrapper">
     <div class="kolom card">
       <div class="kolom-kop">
@@ -269,6 +326,8 @@
   <button class="knop" id="knop-terug">Terug naar niveaus</button>
 </div>
 
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
 <script>
 "use strict";
 
@@ -693,7 +752,10 @@ function sterrenVoorScore(score, totaal) {
   return 0;
 }
 
+let serverRecords = {};
+
 function laadVoortgang() {
+  if (Auth.ingelogd() && Auth.isLeerling()) return serverRecords;
   try { return JSON.parse(localStorage.getItem(OPSLAG)) || {}; }
   catch { return {}; }
 }
@@ -710,6 +772,12 @@ function toonStartpagina() {
   $("scherm-oefenen").classList.add("verborgen");
   $("scherm-resultaat").classList.add("verborgen");
   $("startpagina").classList.remove("verborgen");
+  const ingelogd = Auth.ingelogd();
+  $("account-balk").classList.toggle("verborgen", !ingelogd);
+  if (ingelogd) {
+    $("account-naam").textContent =
+      "Hoi " + Auth.gebruiker().roepnaam + (Auth.isDocent() ? " (docent)" : "");
+  }
   const voortgang = laadVoortgang();
   const containerAnaloog = $("niveaus-analoog");
   const containerDigitaal = $("niveaus-digitaal");
@@ -749,7 +817,13 @@ function toonResultaat() {
   $("scherm-resultaat").classList.remove("verborgen");
   const sterren = sterrenVoorScore(score, AANTAL_OPDRACHTEN);
   const eerderBeste = (laadVoortgang()[niveau.nr] || -1);
-  bewaarSterren(niveau.nr, sterren);
+  if (Auth.ingelogd() && Auth.isLeerling()) {
+    Auth.bewaarResultaat(niveau.nr, score, AANTAL_OPDRACHTEN, sterren).then((ok) => {
+      if (ok) Auth.laadRecords().then((r) => { serverRecords = r; });
+    });
+  } else {
+    bewaarSterren(niveau.nr, sterren);
+  }
   $("sterren").textContent = "★".repeat(sterren) + "☆".repeat(3 - sterren);
   $("resultaat-titel").textContent =
     "Je hebt " + score + " van de " + AANTAL_OPDRACHTEN + " goed!";
@@ -765,7 +839,63 @@ $("knop-opnieuw").addEventListener("click", () => startSessie(niveau));
 $("knop-terug").addEventListener("click", toonStartpagina);
 $("knop-hoofdmenu").addEventListener("click", toonStartpagina);
 
-toonStartpagina();
+function toonWelkom() {
+  ["startpagina", "scherm-oefenen", "scherm-resultaat", "scherm-login"].forEach((id) =>
+    $(id).classList.add("verborgen"));
+  $("scherm-welkom").classList.remove("verborgen");
+}
+
+function toonLogin() {
+  ["startpagina", "scherm-oefenen", "scherm-resultaat", "scherm-welkom"].forEach((id) =>
+    $(id).classList.add("verborgen"));
+  $("login-feedback").textContent = "";
+  $("login-feedback").className = "feedback";
+  $("login-email").value = "";
+  $("login-wachtwoord").value = "";
+  $("scherm-login").classList.remove("verborgen");
+  $("login-email").focus();
+}
+
+$("knop-naar-login").addEventListener("click", toonLogin);
+$("knop-login-terug").addEventListener("click", toonWelkom);
+$("knop-gast").addEventListener("click", () => { toonStartpagina(); });
+
+$("knop-uitloggen").addEventListener("click", () => {
+  Auth.uitloggen();
+  serverRecords = {};
+  toonWelkom();
+});
+
+async function voerLoginUit() {
+  const email = $("login-email").value.trim();
+  const wachtwoord = $("login-wachtwoord").value;
+  if (!email || !wachtwoord) return;
+  $("knop-login").disabled = true;
+  $("login-feedback").textContent = "";
+  try {
+    await Auth.login(email, wachtwoord);
+    if (Auth.isLeerling()) serverRecords = await Auth.laadRecords();
+    toonStartpagina();
+  } catch (e) {
+    $("login-feedback").textContent = "Dat lukte niet. Probeer het nog eens.";
+    $("login-feedback").classList.add("fout");
+  }
+  $("knop-login").disabled = false;
+}
+
+$("knop-login").addEventListener("click", voerLoginUit);
+$("scherm-login").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") voerLoginUit();
+});
+
+(async function start() {
+  if (!Auth.beschikbaar) { toonStartpagina(); return; }
+  try {
+    const gebruiker = await Auth.herstelSessie();
+    if (gebruiker && Auth.isLeerling()) serverRecords = await Auth.laadRecords();
+  } catch {}
+  toonStartpagina();
+})();
 </script>
 </body>
 </html>
