@@ -65,7 +65,7 @@ create or replace function public.km_huidige_gebruiker()
 returns uuid
 language sql
 stable
-sql security definer
+security definer
 set search_path = public
 as $$
   select user_id from public.km_sessies
