@@ -302,8 +302,8 @@
 <div id="scherm-login" class="card verborgen">
   <p class="sub">Log in met je account</p>
   <div class="login-form">
-    <label class="verborgen" for="login-email">Gebruikersnaam</label>
-    <input type="text" id="login-email" class="login-input" placeholder="Gebruikersnaam" autocomplete="username">
+    <label class="verborgen" for="login-email">Inlognaam</label>
+    <input type="text" id="login-email" class="login-input" placeholder="Inlognaam" autocomplete="username">
     <label class="verborgen" for="login-wachtwoord">Wachtwoord</label>
     <input type="password" id="login-wachtwoord" class="login-input" placeholder="Wachtwoord" autocomplete="current-password">
   </div>
@@ -320,7 +320,7 @@
   <p class="sub" style="margin-top:1.5rem">Nieuwe leerling</p>
   <div class="login-form">
     <input type="text" id="nieuwe-roepnaam" class="login-input" placeholder="Roepnaam (bijv. Emma)">
-    <input type="text" id="nieuwe-email" class="login-input" placeholder="Gebruikersnaam (bijv. emma@klas6)">
+    <input type="text" id="nieuwe-email" class="login-input" placeholder="Inlognaam (bijv. Emma6)">
     <input type="text" id="nieuwe-ww" class="login-input" placeholder="Wachtwoord (min. 6 tekens)">
   </div>
   <button class="knop" id="knop-nieuwe-leerling">Leerling aanmaken</button>
@@ -904,27 +904,7 @@ function toonWelkom() {
   toonScherm("scherm-welkom");
 }
 
-const WW_OPSLAG = "klokmeester_wachtwoorden_v1";
-
-function laadWachtwoorden() {
-  try { return JSON.parse(localStorage.getItem(WW_OPSLAG)) || {}; }
-  catch { return {}; }
-}
-
-function bewaarWachtwoord(userId, ww) {
-  const map = laadWachtwoorden();
-  map[userId] = ww;
-  localStorage.setItem(WW_OPSLAG, JSON.stringify(map));
-}
-
-function verwijderWachtwoord(userId) {
-  const map = laadWachtwoorden();
-  delete map[userId];
-  localStorage.setItem(WW_OPSLAG, JSON.stringify(map));
-}
-
 function verversKlasPrint(rijen) {
-  const wwMap = laadWachtwoorden();
   const print = $("klas-print");
   const titel = document.createElement("h2");
   titel.textContent = "Inloggegevens KlokMeester \u2013 klas van " + Auth.gebruiker().roepnaam;
@@ -932,7 +912,7 @@ function verversKlasPrint(rijen) {
   tabel.innerHTML = "<tr><th>Naam</th><th>Inlognaam</th><th>Wachtwoord</th></tr>";
   rijen.forEach((r) => {
     const tr = document.createElement("tr");
-    const ww = wwMap[r.user_id] || "(gewijzigd, alleen docentbekend)";
+    const ww = r.wachtwoord || "";
     tr.innerHTML = "<td>" + r.roepnaam + "</td><td>" + (r.inlognaam || "") + "</td><td>" + ww + "</td>";
     tabel.appendChild(tr);
   });
@@ -1037,7 +1017,6 @@ async function resetWachtwoord(leerling) {
   const fb = $("docent-feedback");
   try {
     await Auth.resetWachtwoord(leerling.user_id, ww);
-    bewaarWachtwoord(leerling.user_id, ww);
     fb.textContent = "Wachtwoord gewijzigd voor " + leerling.roepnaam + ".";
     fb.className = "feedback goed";
   } catch (e) {
@@ -1051,7 +1030,6 @@ async function verwijderLeerling(leerling, rij) {
   const fb = $("docent-feedback");
   try {
     await Auth.verwijderLeerling(leerling.user_id);
-    verwijderWachtwoord(leerling.user_id);
     fb.textContent = leerling.roepnaam + " is verwijderd.";
     fb.className = "feedback goed";
     rij.remove();
@@ -1081,7 +1059,7 @@ $("knop-docent-terug").addEventListener("click", toonStartpagina);
 
 $("knop-nieuwe-leerling").addEventListener("click", async () => {
   const roepnaam = $("nieuwe-roepnaam").value.trim();
-  const email = $("nieuwe-email").value.trim();
+  const inlognaam = $("nieuwe-email").value.trim();
   const wachtwoord = $("nieuwe-ww").value;
   const fb = $("docent-feedback");
   fb.textContent = "";
@@ -1097,8 +1075,7 @@ $("knop-nieuwe-leerling").addEventListener("click", async () => {
     return;
   }
   try {
-    const nieuweId = await Auth.maakLeerling(email, wachtwoord, roepnaam);
-    bewaarWachtwoord(nieuweId, wachtwoord);
+    await Auth.maakLeerling(inlognaam, wachtwoord, roepnaam);
     fb.textContent = roepnaam + " is toegevoegd!";
     fb.classList.add("goed");
     $("nieuwe-roepnaam").value = "";
@@ -1125,13 +1102,13 @@ $("knop-uitloggen").addEventListener("click", () => {
 });
 
 async function voerLoginUit() {
-  const email = $("login-email").value.trim();
+  const inlognaam = $("login-email").value.trim();
   const wachtwoord = $("login-wachtwoord").value;
   if (!email || !wachtwoord) return;
   $("knop-login").disabled = true;
   $("login-feedback").textContent = "";
   try {
-    await Auth.login(email, wachtwoord);
+    await Auth.login(inlognaam, wachtwoord);
     if (Auth.isLeerling()) serverRecords = await Auth.laadRecords();
     toonStartpagina();
   } catch (e) {

@@ -65,7 +65,8 @@ inhoud en scope; dit bestand beschrijft hoe we werken.
 - Deployen gaat via GitHub (koppeling Vercel/Netlify met de repo): push naar `main` = live.
 - Voortgang tijdelijk in `localStorage` (`klokmeester_voortgang_v1`) totdat fase 3 (database) dit vervangt. Sleutel = niveau­nummer; bij wijzigingen in de niveau­indeling de opslag-key laten staan (of een nieuwe versie-suffix gebruiken).
 - Gastmodus slaat niets op (ook niet na fase 3).
-- Fase 3 en later: Supabase (Postgres) + auth; rollen `leerling` en `docent`; datastructuur voorbereid op meerdere docenten/klassen (docent → klas(sen) → leerlingen); AVG-minimalisatie: alleen (roep)naam, geen foto/geboortedatum; geen selfservice-registratie (kinderen <13, docent maakt accounts aan).
+- Fase 3 en later: Supabase (Postgres); rollen `leerling` en `docent`; datastructuur voorbereid op meerdere docenten/klassen (docent → klas(sen) → leerlingen); AVG-minimalisatie: alleen (roep)naam, geen foto/geboortedatum; geen selfservice-registratie (kinderen <13, docent maakt accounts aan).
+- **Login (besluit opdrachtgever, afwijking van het PRD):** Supabase-auth is vervangen door een eigen login met `inlognaam` + `wachtwoord` (beide hoofdlettergevoelig), leesbaar opgeslagen in `km_gebruikers` (bewuste keuze: er zit geen gevoelige informatie achter de login). Sessies lopen via `km_sessies` + de header `x-km-token`; alle toegangsregels (RLS/RPC's) controleren deze token. Docent kan inlognamen/wachtwoorden zien en printen. SQL: `supabase/fase5-eigen-login.sql`.
 - **Supabase-project (aangemaakt door opdrachtgever):** URL `https://sotrwsxrcbmdwldloubb.supabase.co`
   — de REST-endpoints staan onder `/rest/v1/<tabel>`. De `anon`-API-sleutel wordt apart
   gedeeld en hoort níet hard-coded in de repo; zet die in een config/omgevingsvariabele
