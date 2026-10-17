@@ -85,21 +85,80 @@ function tijdTekst(t, type) {
   return woordTijd(t) + " in de " + dagdeel(t.uur);
 }
 
+function verwisseldeWijzers(t) {
+  // Wijzers verwisseld: de uurstand gelezen als minuten en de minuutstand
+  // als uur. Bij 3:00 staat de minuutwijzer op 12 en de uurwijzer op 3,
+  // verwisseld -> uur 12, minuut 15 -> "kwart over twaalf".
+  const uur12 = ((t.uur + 11) % 12) + 1;
+  const uurUitWijzer = t.minuut === 0 ? 12 : Math.round(t.minuut / 5);
+  return { uur: uurUitWijzer === 0 ? 12 : uurUitWijzer, minuut: (uur12 % 12) * 5 };
+}
+
+function maakAfleider(juisteTijd, niveau, type) {
+  const minuten = niveau.minuten || null;
+  const stap = niveau.stap || 1;
+  const pogingen = [
+    () => {
+      const d = Math.random() < 0.5 ? stap : -stap;
+      return { uur: juisteTijd.uur, minuut: ((juisteTijd.minuut + d) % 60 + 60) % 60 };
+    },
+    () => {
+      const d = Math.random() < 0.5 ? 1 : -1;
+      const maxUur = type === "digitaal24" ? 23 : 12;
+      const minUur = type === "digitaal24" ? 0 : 1;
+      let uur = juisteTijd.uur + d;
+      if (uur > maxUur) uur = minUur;
+      if (uur < minUur) uur = maxUur;
+      return { uur, minuut: juisteTijd.minuut };
+    },
+    () => verwisseldeWijzers(juisteTijd),
+    () => maakTijd(niveau, type)
+  ];
+  for (let poging = 0; poging < 20; poging++) {
+    let kandidaat = willekeurig(pogingen)();
+    if (minuten && !minuten.includes(kandidaat.minuut)) {
+      if (kandidaat.minuut === verwisseldeWijzers(juisteTijd).minuut) {
+        // verwisselde wijzers zijn een bewuste, misleidende afleider en
+        // mogen buiten de niveau-minuten liggen (bijv. "kwart over twaalf"
+        // bij 3:00 op het niveau van hele/halve uren)
+        if (kandidaat.uur === juisteTijd.uur && kandidaat.minuut === juisteTijd.minuut) continue;
+      } else {
+        const geldig = minuten.filter((m) => m !== juisteTijd.minuut);
+        if (!geldig.length) continue;
+        kandidaat.minuut = willekeurig(geldig);
+      }
+    }
+    if (type !== "digitaal24") {
+      if (!(kandidaat.uur >= 1 && kandidaat.uur <= 12)) continue;
+    } else if (!(kandidaat.uur >= 0 && kandidaat.uur <= 23)) {
+      continue;
+    }
+    if (kandidaat.uur === juisteTijd.uur && kandidaat.minuut === juisteTijd.minuut) continue;
+    return kandidaat;
+  }
+  return { uur: juisteTijd.uur, minuut: (juisteTijd.minuut + stap) % 60 };
+}
+
 function toetsOpties(juisteTijd, niveau, type) {
   const juisteTekst = tijdTekst(juisteTijd, type);
   const opties = new Set([juisteTekst]);
   let beveiliging = 0;
   while (opties.size < 4 && beveiliging++ < 1000) {
-    const kandidaat = maakTijd(niveau, type);
-    let tekst = tijdTekst(kandidaat, type);
-    if (tekst === juisteTekst) continue;
-    if (type === "digitaal24" && Math.random() < 0.4) {
-      tekst = woordTijd(kandidaat) + " in de " + willekeurig(DAGDELEN).naam;
-      if (tekst === juisteTekst) continue;
+    const kandidaat = maakAfleider(juisteTijd, niveau, type);
+    if (type === "digitaal24" && Math.random() < 0.5) {
+      const bron = Math.random() < 0.5 ? juisteTijd : kandidaat;
+      const fouteDagdelen = DAGDELEN.filter((d) => d.naam !== dagdeel(bron.uur));
+      const metDagdeel = woordTijd(bron) + " in de " + willekeurig(fouteDagdelen).naam;
+      if (metDagdeel !== juisteTekst && !opties.has(metDagdeel)) {
+        opties.add(metDagdeel);
+        continue;
+      }
     }
+    const tekst = tijdTekst(kandidaat, type);
+    if (tekst === juisteTekst) continue;
     opties.add(tekst);
   }
-  while (opties.size < 4 && beveiliging++ < 2000) opties.add("\u2013");
+  while (opties.size < 4 && beveiliging++ < 2000) opties.add("\\u2013");
   return Array.from(opties).sort(() => Math.random() - 0.5);
 }
 

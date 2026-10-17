@@ -62,7 +62,7 @@ op de minuut. In de database is de daagtaak gewoon niveau 11
 - **Instellen digitaal:** cijfers compact naast elkaar met dubbele punt uitgelijnd; uren en minuten zijn typbaar én via +/- aanpasbaar.
 - **Hoofdmenu-knop:** klein en minder opvallend, rechts-onder.
 - **Dagdelen** (bij digitale niveaus): niet als hint bij de opdracht ("Het is avond" bestaat niet); wél in de antwoordopties (bij ~40% van de foute opties bewust een fout dagdeel als afleider) en bij de instel-doeltekst.
-- **Sessie:** 10 opdrachten, geen tijdslimiet; na elke opdracht directe feedback (groen/rood + goede antwoord bij fout); resultaatscherm met 0–3 sterren ("Nieuw record!" bij verbetering).
+- **Sessie:** 10 opdrachten, geen tijdslimiet; per sessie precies 5 meerkeuzeopdrachten en 5 instelopdrachten (wijzers of digitale klok), in willekeurige volgorde. Foute meerkeuze-opties zijn bewust misleidend en liggen dicht bij het juiste antwoord: minuut/eén stap verkeerd, uur één verkeerd, verwisselde wijzers (bijv. 3:00 → "kwart over 12") en bij digitale niveaus een fout dagdeel (bijv. 8:00 → "8 uur in de avond"); na elke opdracht directe feedback (groen/rood + goede antwoord bij fout); resultaatscherm met 0–3 sterren ("Nieuw record!" bij verbetering).
 - Responsive: werkt op smal scherm, digibord en laptop; klik = tik (pointer events).
 
 ## 5. Technische afspraken
