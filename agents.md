@@ -34,10 +34,17 @@ inhoud en scope; dit bestand beschrijft hoe we werken.
 - Bij de digitale niveaus (6–10) is er **geen analoge klok** in beeld.
 - De 24-uursnotatie gaat meteen in vanaf niveau 6; "24-uurs" hoeft dus niet in de niveau­namen.
 
+**Daagtaak (fase 5):** niveau 11, als opvallende gouden kaart onder de twee kolommen
+("⭐ Extra uitdaging"). Mix van analoog én digitaal in alle drie de toetsvormen,
+willekeurig per opdracht; ca. 40% van de tijden komt uit een vaste lijst lastige tijden
+(9:58, 11:59, 0:00, 0:02, 12:00, 12:58, 23:58, 17:59, 6:01), de rest is willekeurig
+op de minuut. In de database is de daagtaak gewoon niveau 11
+(SQL: `supabase/fase5-daagtaak.sql`, CHECK-afbakening 1–11).
+
 ## 3. Klokbegrippen (rekenmethode-conventie, hard afgesproken)
 
 - Maximum **14 over / 14 voor**; daarna via "half":
-  - 0 min → "X uur"
+  - 0 min → "X uur" (bij uur 0/12 altijd "12 uur", nooit "0 uur")
   - 1–14 min → "X over [uur]" (15 → "kwart over [uur]")
   - 16–29 min → "X voor half [volgend uur]"
   - 30 min → "half [volgend uur]"
@@ -88,6 +95,11 @@ inhoud en scope; dit bestand beschrijft hoe we werken.
 3. ✅ Fase 3 — Supabase + auth + accounts + resultaten bewaren; gastmodus blijft permanent.
    Leerlingaccounts worden door de docent in de app aangemaakt (`km_maak_leerling`);
    het docentaccount zelf is eenmalig via het Supabase-dashboard gemaakt.
-4. 🔨 Fase 4 — docentdashboard: resultaten per leerling, roepnaam wijzigen,
-   wachtwoord resetten, verwijderen (SQL: `supabase/fase4-beheer.sql`).
-5. Daarna: fase 5 (daagtaak, polish, publicatie).
+4. ✅ Fase 4 — docentdashboard: resultaten per leerling, roepnaam wijzigen,
+   wachtwoord resetten, verwijderen, printbaar inlogoverzicht (SQL: `supabase/fase4-beheer.sql`).
+   Login is een eigen systeem (inlognaam+wachtwoord in `km_gebruikers`), geen Supabase-auth
+   (SQL: `supabase/fase5-eigen-login.sql`).
+5. 🔨 Fase 5 — daagtaak (niveau 11, SQL: `supabase/fase5-daagtaak.sql`),
+   kindvriendelijke polish, docentenhandleiding (`docentenhandleiding.md`).
+   Daarna: eindtest met echte leerlingen (pilot), dan live met groep 6.
+   Verificatie van tijdgeneratie/woordvormen/opties: `node test/verificatie-fase5.mjs`.
