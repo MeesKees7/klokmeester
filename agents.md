@@ -85,7 +85,8 @@ op de minuut. In de database is de daagtaak gewoon niveau 11
 - **Feedback van de opdrachtgever (Kees) gaat vóór het PRD** als ze elkaar tegenspreken; documenteer de afwijking (zoals boven gebeurd is).
 - **Verificatie:** tijdgeneratie, woordvormen en optie-generatie worden gesimuleerd (Node one-liner) bij elke wijziging daarin; eis: 0 fouten over ≥100.000 gegenereerde gevallen (uniek, juist, geen verboden patronen).
 - **Commits:** klein en gericht, in het Nederlands, voorvoegsel met de fase ("Fase 2 feedback: …").
-- **Branches:** werk op een `vibe/...`-branch, push, en merge (fast-forward) naar `main` na akkoord opdrachtgever. `main` is altijd werkend/deploybaar.
+- **Branches:** werk op een `vibe/...`-branch, push, en merge (fast-forward) naar `main`. `main` is altijd werkend/deploybaar.
+- **Merge-beleid (afgesproken met de opdrachtgever):** na een afgeronde taak **direct** fast-forward mergen naar `main` en pushen, zonder aparte akkoordronde; Netlify zet de wijziging live. Feedback van de opdrachtgever wordt daarna verwerkt in een nieuwe `vibe/...`-branch.
 - **Geen scope-creep:** alles wat het PRD bewust níet in v1 heeft (badges, leaderboard, adaptieve moeilijkheid, foutenanalyse) komt er niet zomaar bij.
 
 ## 7. Volgende stappen (stand van zaken)
