@@ -116,7 +116,7 @@
   }
   .card { position: relative; }
   .sterren { font-size: clamp(2.2rem, 8vw, 3.2rem); letter-spacing: .3em; margin: .5rem 0 1rem; }
-  .verborgen { display: none; }
+  .verborgen { display: none !important; }
 
   .kolom-wrapper {
     display: grid;
@@ -310,6 +310,10 @@
     color: #7a8aa0;
     border: 2px solid #c4cedd;
   }
+  .account-balk.gast {
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
   .voettekst {
     margin-top: 2rem;
     font-size: clamp(0.8rem, 2vw, 0.95rem);
@@ -371,7 +375,7 @@
       <button class="knop" id="knop-uitloggen">Uitloggen</button>
     </span>
   </div>
-  <div class="account-balk verborgen" id="gast-balk">
+  <div class="account-balk gast verborgen" id="gast-balk">
     <span>Wil je je resultaten opslaan, log dan in:</span>
     <button class="knop" id="knop-inloggen-start">Inloggen</button>
   </div>
