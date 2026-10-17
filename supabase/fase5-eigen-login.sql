@@ -337,3 +337,40 @@ where g.rol = 'docent'
     select 1 from public.km_klassen k
     where k.docent_id = g.user_id
   );
+
+-- ------------------------------------------------------------
+-- 9. Resultaat + record in één aanroep (robuust, omzeilt RLS-complexiteit)
+-- ------------------------------------------------------------
+create or replace function public.km_bewaar_resultaat(
+  p_niveau  int,
+  p_goed    int,
+  p_totaal  int,
+  p_sterren int
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := public.km_huidige_gebruiker();
+begin
+  if v_user is null then
+    raise exception 'Niet ingelogd';
+  end if;
+  if not exists (select 1 from public.km_gebruikers where user_id = v_user and rol = 'leerling') then
+    raise exception 'Alleen leerlingen oefenen';
+  end if;
+  insert into public.km_resultaten (leerling_id, niveau, toetsvorm, goed, totaal, sterren)
+  values (v_user, p_niveau, 'mix', p_goed, p_totaal, p_sterren);
+  insert into public.km_records (leerling_id, niveau, sterren)
+  values (v_user, p_niveau, p_sterren)
+  on conflict (leerling_id, niveau)
+  do update set
+    sterren = greatest(public.km_records.sterren, excluded.sterren),
+    updated_at = now();
+end;
+$$;
+
+revoke all on function public.km_bewaar_resultaat(int, int, int, int) from public;
+grant execute on function public.km_bewaar_resultaat(int, int, int, int) to anon;

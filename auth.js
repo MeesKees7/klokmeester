@@ -72,19 +72,7 @@ const Auth = (() => {
   const bewaarResultaat = async (niveau, goed, totaal, sterren) => {
     if (!isLeerling()) return false;
     try {
-      await api("/rest/v1/km_resultaten", {
-        method: "POST",
-        headers: Object.assign(headers(), { Prefer: "return=minimal" }),
-        body: JSON.stringify({
-          leerling_id: gebruiker.id,
-          niveau: niveau,
-          toetsvorm: "mix",
-          goed: goed,
-          totaal: totaal,
-          sterren: sterren
-        })
-      });
-      await rpc("km_bewaar_record", { p_niveau: niveau, p_sterren: sterren });
+      await rpc("km_bewaar_resultaat", { p_niveau: niveau, p_goed: goed, p_totaal: totaal, p_sterren: sterren });
       return true;
     } catch (e) {
       console.error("Resultaat opslaan mislukt:", e);

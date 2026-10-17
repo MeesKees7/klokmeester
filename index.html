@@ -163,6 +163,8 @@
   .niveau-kaart .naam { font-size: clamp(0.85rem, 2.2vw, 1rem); font-weight: 700; color: var(--donker); margin: 0.1rem 0 0.15rem; min-height: 2.2em; display: flex; align-items: center; }
   .niveau-kaart .kaart-sterren { margin-top: 0.1rem; }
   .niveau-kaart .kaart-sterren { color: #f4b400; font-size: 1.1rem; letter-spacing: .12em; }
+  .niveau-kaart.behaald { background: #e8f7ec; border-color: var(--groen); }
+  .niveau-kaart.behaald .nr { color: #2e9e5b; }
 
   .digitaal-instel {
     display: flex;
@@ -847,7 +849,7 @@ function toonStartpagina() {
   NIVEAUS.forEach((niv) => {
     const behaald = voortgang[niv.nr];
     const kaart = document.createElement("button");
-    kaart.className = "niveau-kaart";
+    kaart.className = "niveau-kaart" + (behaald !== undefined && behaald > 0 ? " behaald" : "");
     const sterrenTekst = behaald === undefined
       ? "☆☆☆"
       : "★".repeat(behaald) + "☆".repeat(3 - behaald);
