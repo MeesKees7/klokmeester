@@ -374,3 +374,18 @@ $$;
 
 revoke all on function public.km_bewaar_resultaat(int, int, int, int) from public;
 grant execute on function public.km_bewaar_resultaat(int, int, int, int) to anon;
+
+-- ------------------------------------------------------------
+-- 10. Eenmalige herstel: records terugrekenen uit al bewaarde resultaten
+-- ------------------------------------------------------------
+-- Voor sessies die vóór de fix zijn afgerond bestaan de km_records
+-- nog niet; die zijn afleidbaar uit km_resultaten (hoogste sterren
+-- per leerling per niveau). Veilig om (herhaald) uit te voeren.
+insert into public.km_records (leerling_id, niveau, sterren)
+select leerling_id, niveau, max(sterren)
+from public.km_resultaten
+group by leerling_id, niveau
+on conflict (leerling_id, niveau)
+do update set
+  sterren = greatest(public.km_records.sterren, excluded.sterren),
+  updated_at = now();
