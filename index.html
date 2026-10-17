@@ -10,7 +10,7 @@
     --blauw: #2c6fbb;
     --groen: #2e9e5b;
     --rood: #d9483b;
-    --licht: #f4f7fb;
+    --licht: #e3e9f2;
     --donker: #1d3557;
   }
   body {
@@ -132,9 +132,11 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    height: 54px;
     margin-bottom: 1rem;
     border-bottom: 3px solid #d7e0ec;
     padding-bottom: 0.75rem;
+    box-sizing: content-box;
   }
   .kolom-kop h2 { font-size: clamp(1.2rem, 3.4vw, 1.5rem); color: var(--donker); }
   .kop-klok { width: 54px; height: 54px; flex: none; }
@@ -308,6 +310,17 @@
     color: #7a8aa0;
     border: 2px solid #c4cedd;
   }
+  .voettekst {
+    margin-top: 2rem;
+    font-size: clamp(0.8rem, 2vw, 0.95rem);
+    color: #7a8aa0;
+  }
+  .voettekst a {
+    color: var(--blauw);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .voettekst a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -357,6 +370,10 @@
       <button class="knop verborgen" id="knop-docent-leerlingen">Leerlingen</button>
       <button class="knop" id="knop-uitloggen">Uitloggen</button>
     </span>
+  </div>
+  <div class="account-balk verborgen" id="gast-balk">
+    <span>Wil je je resultaten opslaan, log dan in:</span>
+    <button class="knop" id="knop-inloggen-start">Inloggen</button>
   </div>
   <div class="kolom-wrapper">
     <div class="kolom card">
@@ -887,6 +904,7 @@ function toonStartpagina() {
   toonScherm("startpagina");
   const ingelogd = Auth.ingelogd();
   $("account-balk").classList.toggle("verborgen", !ingelogd);
+  $("gast-balk").classList.toggle("verborgen", ingelogd);
   $("knop-docent-leerlingen").classList.toggle("verborgen", !(ingelogd && Auth.isDocent()));
   if (ingelogd) {
     $("account-naam").textContent =
@@ -1124,6 +1142,8 @@ $("knop-print-klas").addEventListener("click", () => window.print());
 $("knop-naar-login").addEventListener("click", toonLogin);
 $("knop-login-terug").addEventListener("click", toonWelkom);
 $("knop-gast").addEventListener("click", () => { toonStartpagina(); });
+
+$("knop-inloggen-start").addEventListener("click", toonLogin);
 $("knop-docent-leerlingen").addEventListener("click", toonDocentScherm);
 $("knop-docent-terug").addEventListener("click", toonStartpagina);
 
@@ -1207,5 +1227,9 @@ $("scherm-login").addEventListener("keydown", (e) => {
   else toonWelkom();
 })();
 </script>
+
+<footer class="voettekst">
+  Gemaakt met Mistral Vibe door <a href="https://woorden-trainer.nl/" target="_blank" rel="noopener">MeesCase7</a>
+</footer>
 </body>
 </html>
